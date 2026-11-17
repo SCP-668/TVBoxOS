@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TVBox</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- 顶部栏：应用名 + 导航 + 日期（对应原版 topLayout + mGridView） -->
+<header id="topbar">
+  <div class="brand"><span class="logo-mark">▶</span><span id="appName">TVBox</span></div>
+  <nav id="nav">
+    <button class="nav-btn active" data-view="home">首页</button>
+    <button class="nav-btn" data-view="vod">点播</button>
+    <button class="nav-btn" data-view="live">直播</button>
+    <button class="nav-btn" data-view="push">推送</button>
+    <button class="nav-btn" data-view="file">本地</button>
+    <button class="nav-btn" data-view="search">搜索</button>
+    <button class="nav-btn" data-view="fav">收藏</button>
+    <button class="nav-btn" data-view="history">历史</button>
+    <button class="nav-btn" data-view="settings">设置</button>
+  </nav>
+  <div class="clock"><span id="clockDate"></span><span id="clockTime"></span></div>
+</header>
+
+<main id="main">
+
+  <!-- ============ 首页：多行横向海报墙 ============ -->
+  <section id="view-home" class="view active">
+    <div class="home-toolbar">
+      <label class="lbl">首页站源</label>
+      <select id="home-site" class="sel"></select>
+      <span id="home-tip" class="tip"></span>
+    </div>
+    <div id="home-classes" class="home-classes"></div>
+    <div id="home-rows" class="rows">
+      <div class="empty-big" id="home-empty">未配置点播源。到「设置 → 配置地址」粘贴 TVBox 配置或导入订阅。</div>
+    </div>
+  </section>
+
+  <!-- ============ 点播：分类网格（GridFragment） ============ -->
+  <section id="view-vod" class="view">
+    <div class="vod-toolbar">
+      <select id="vod-site" class="sel"></select>
+      <div id="vod-classes" class="chips"></div>
+      <div class="pager">
+        <button id="vod-prev" class="ico-btn">◀</button>
+        <span id="vod-page">1 / 1</span>
+        <button id="vod-next" class="ico-btn">▶</button>
+      </div>
+    </div>
+    <div id="vod-grid" class="poster-grid"></div>
+    <div id="vod-empty" class="empty-big">选择一个点播源和分类。</div>
+  </section>
+
+  <!-- ============ 直播：三栏 EPG（LivePlayActivity） ============ -->
+  <section id="view-live" class="view">
+    <div class="live-wrap">
+      <!-- 左：分组 + 频道 -->
+      <div class="live-left" id="live-left">
+        <div class="live-resize" id="live-resize" title="拖动调整宽度"></div>
+        <select id="live-source" class="sel"></select>
+        <div class="live-cols">
+          <div id="live-groups" class="live-groups"></div>
+          <div id="live-channels" class="live-channels"></div>
+        </div>
+        <input id="live-filter" class="live-filter" placeholder="筛选频道…">
+      </div>
+      <!-- 中：播放器 + 频道名 + EPG 条 -->
+      <div class="live-center">
+        <video id="live-video" playsinline autoplay></video>
+        <div id="live-big-name" class="live-big-name"></div>
+        <div id="live-msg" class="player-msg">从左侧选择频道开始播放</div>
+        <div class="epg-bar">
+          <div class="epg-ch" id="epg-ch">—</div>
+          <div class="epg-info">
+            <div class="epg-row"><b>正在播放</b><span id="epg-now">暂无节目信息</span></div>
+            <div class="epg-row"><b>即将播放</b><span id="epg-next"></span></div>
+          </div>
+          <div class="epg-src" id="epg-src">源 1/1</div>
+        </div>
+      </div>
+      <!-- 右：设置（线路/清晰度/换台） -->
+      <div class="live-right">
+        <div class="lr-title">播放设置</div>
+        <div class="lr-item" id="lr-line"><span>线路</span><b id="lr-line-val">1/1</b></div>
+        <div class="lr-item" id="lr-retry"><span>换线路</span><b>↻</b></div>
+        <div class="lr-item" id="lr-prev"><span>上一个</span><b>⏮</b></div>
+        <div class="lr-item" id="lr-next"><span>下一个</span><b>⏭</b></div>
+        <div class="lr-item" id="lr-mute"><span>静音</span><b id="lr-mute-val">🔊</b></div>
+        <div class="lr-vol">
+          <div class="lr-vol-head"><span>音量</span><b id="live-vol-val">80</b></div>
+          <input type="range" id="live-vol" min="0" max="100" value="80">
+        </div>
+        <div class="lr-item" id="lr-full"><span>全屏</span><b>⛶</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 推送：粘贴链接直接播放（PushActivity） ============ -->
+  <section id="view-push" class="view">
+    <div class="push-wrap">
+      <div class="push-card">
+        <h2>🔗 推送播放</h2>
+        <p class="push-desc">粘贴视频链接或 TVBox 分享文本，直接播放。支持 m3u8 / mp4 等。</p>
+        <textarea id="push-input" class="push-input" spellcheck="false" placeholder="在这里粘贴链接，例如：&#10;https://example.com/video.m3u8&#10;或 TVBox 分享文本：访问码 http://..."></textarea>
+        <div class="push-actions">
+          <button id="push-play" class="solid-btn">▶ 立即播放</button>
+          <button id="push-clear" class="ghost-btn">清空</button>
+        </div>
+        <div id="push-msg" class="push-msg"></div>
+        <div class="push-history-head"><span>最近推送</span><button id="push-hist-clear" class="ghost-btn">清空</button></div>
+        <div id="push-history" class="push-history"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 本地文件：浏览播放本机视频（LocalFileActivity） ============ -->
+  <section id="view-file" class="view">
+    <div class="file-toolbar">
+      <button id="file-up" class="ico-btn">⬆ 上级</button>
+      <span id="file-path" class="file-path">—</span>
+      <button id="file-root" class="ghost-btn">📁 快捷目录</button>
+    </div>
+    <div id="file-list" class="file-list"></div>
+    <div id="file-empty" class="empty-big">加载中…</div>
+  </section>
+
+  <!-- ============ 搜索：聚合搜索（SearchActivity） ============ -->
+  <section id="view-search" class="view">
+    <div class="search-top">
+      <input id="search-input" class="search-input" placeholder="输入片名，边输边搜…" autocomplete="off">
+      <button id="search-btn" class="solid-btn">搜索</button>
+    </div>
+    <div id="search-hot" class="search-extra">
+      <span class="se-label">热门搜索</span>
+      <div id="hot-words" class="se-chips"></div>
+    </div>
+    <div id="search-history" class="search-extra">
+      <span class="se-label">搜索历史</span>
+      <div id="search-history-words" class="se-chips"></div>
+    </div>
+    <div id="search-results" class="rows"></div>
+    <div id="search-empty" class="empty-big">输入关键词，跨所有站点聚合搜索。</div>
+  </section>
+
+  <!-- ============ 收藏 ============ -->
+  <section id="view-fav" class="view">
+    <div class="list-head"><h2>我的收藏</h2><button class="ghost-btn" id="fav-clear">清空</button></div>
+    <div id="fav-grid" class="poster-grid"></div>
+    <div id="fav-empty" class="empty-big">还没有收藏。在详情里点「加入收藏」。</div>
+  </section>
+
+  <!-- ============ 历史 ============ -->
+  <section id="view-history" class="view">
+    <div class="list-head"><h2>观看历史</h2><button class="ghost-btn" id="history-clear">清空</button></div>
+    <div id="history-grid" class="poster-grid"></div>
+    <div id="history-empty" class="empty-big">还没有观看记录。</div>
+  </section>
+
+  <!-- ============ 设置：分组设置项（fragment_model） ============ -->
+  <section id="view-settings" class="view">
+    <div class="settings-wrap">
+      <div class="settings-grid">
+
+        <div class="set-group">
+          <div class="set-group-title">数据源</div>
+          <div class="set-item" id="set-api-vod"><span class="si-name">点播配置地址</span><span class="si-val" id="set-api-vod-val">—</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-api-live"><span class="si-name">直播配置地址</span><span class="si-val" id="set-api-live-val">—</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-api-history"><span class="si-name">配置历史</span><span class="si-val" id="set-api-history-val">—</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-import"><span class="si-name">从 URL 导入配置</span><span class="si-val" id="set-import-val">粘贴订阅地址</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-import-file"><span class="si-name">导入本地文件</span><span class="si-val" id="set-import-file-val">选择配置 JSON</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-home"><span class="si-name">首页站源</span><span class="si-val" id="set-home-val">—</span><span class="si-arrow">›</span></div>
+        </div>
+
+        <div class="set-group">
+          <div class="set-group-title">通用</div>
+          <div class="set-item" id="set-default-view"><span class="si-name">下次进入</span><span class="si-val" id="set-default-view-val">点播</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-home-rec"><span class="si-name">首页推荐</span><span class="si-val" id="set-home-rec-val">站点推荐</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-home-style"><span class="si-name">首页多行</span><span class="si-val" id="set-home-style-val">开启</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-search-view"><span class="si-name">搜索展示</span><span class="si-val" id="set-search-view-val">聚合</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-fast"><span class="si-name">聚合搜索</span><span class="si-val" id="set-fast-val">开启</span><span class="si-arrow">›</span></div>
+        </div>
+
+        <div class="set-group">
+          <div class="set-group-title">播放</div>
+          <div class="set-item" id="set-player"><span class="si-name">播放器</span><span class="si-val" id="set-player-val">系统内置</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-scale"><span class="si-name">画面缩放</span><span class="si-val" id="set-scale-val">适应</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-autoline"><span class="si-name">自动换线</span><span class="si-val" id="set-autoline-val">开启</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-m3u8ad"><span class="si-name">去广告</span><span class="si-val" id="set-m3u8ad-val">关闭</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-dns"><span class="si-name">安全DNS</span><span class="si-val" id="set-dns-val">关闭</span><span class="si-arrow">›</span></div>
+        </div>
+
+        <div class="set-group">
+          <div class="set-group-title">历史与数据</div>
+          <div class="set-item" id="set-history-num"><span class="si-name">历史记录</span><span class="si-val" id="set-history-num-val">60条</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-history-merge"><span class="si-name">历史合并</span><span class="si-val" id="set-history-merge-val">开启</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-clear-cache"><span class="si-name">清空缓存</span><span class="si-val">›</span></div>
+          <div class="set-item" id="set-backup"><span class="si-name">数据备份</span><span class="si-val" id="set-backup-val">导出 JSON</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-restore"><span class="si-name">数据恢复</span><span class="si-val" id="set-restore-val">导入备份</span><span class="si-arrow">›</span></div>
+        </div>
+
+        <div class="set-group">
+          <div class="set-group-title">界面</div>
+          <div class="set-item" id="set-wallpaper"><span class="si-name">换张壁纸</span><span class="si-val">›</span></div>
+          <div class="set-item" id="set-bgreset"><span class="si-name">重置壁纸</span><span class="si-val">›</span></div>
+          <div class="set-item" id="set-about"><span class="si-name">关于</span><span class="si-val">TVBox PC 1.0 ›</span></div>
+        </div>
+
+      </div>
+    </div>
+    <input type="file" id="file-import-config" accept=".json,.txt" style="display:none">
+    <input type="file" id="file-restore" accept="application/json,.json" style="display:none">
+  </section>
+
+  <!-- ============ 通用列表选择弹窗（配置历史等） ============ -->
+  <div id="list-modal" class="modal hidden">
+    <div class="prompt-box">
+      <h3 id="list-modal-title">选择</h3>
+      <div id="list-modal-box" class="list-modal-box"></div>
+      <div class="prompt-actions">
+        <button class="ghost-btn" id="list-modal-close">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 播放页（点播全屏） ============ -->
+  <section id="view-player" class="view player-view">
+    <video id="vod-video" playsinline autoplay controls></video>
+    <div class="player-top">
+      <button class="ico-btn" id="player-back">◀ 返回</button>
+      <span id="player-title" class="player-title"></span>
+    </div>
+    <div class="player-bottom">
+      <button class="ico-btn" id="player-prev">⏮ 上一集</button>
+      <button class="ico-btn" id="player-next">下一集 ⏭</button>
+      <select id="player-line" class="sel"></select>
+      <select id="player-ep" class="sel"></select>
+    </div>
+    <div id="player-msg" class="player-msg"></div>
+  </section>
+
+</main>
+
+<!-- ============ 详情弹层（activity_detail） ============ -->
+<div id="detail" class="modal hidden">
+  <div class="detail-box">
+    <button class="modal-close" id="detail-close">✕</button>
+    <div class="detail-top">
+      <div class="detail-poster-wrap"><img id="detail-pic" class="detail-pic" src="" alt=""></div>
+      <div class="detail-info">
+        <h1 id="detail-name"></h1>
+        <div class="detail-meta">
+          <span id="detail-site"></span><span id="detail-year"></span><span id="detail-area"></span>
+          <span id="detail-lang"></span><span id="detail-type"></span><span id="detail-remarks"></span>
+        </div>
+        <div class="detail-line" id="detail-actor-line"><b>主演：</b><span id="detail-actor"></span></div>
+        <div class="detail-line" id="detail-director-line"><b>导演：</b><span id="detail-director"></span></div>
+        <p id="detail-des" class="detail-des"></p>
+        <div class="detail-actions">
+          <button class="act primary" id="detail-play">立即播放</button>
+          <button class="act" id="detail-search">快速搜索</button>
+          <button class="act" id="detail-fav">加入收藏</button>
+          <button class="act" id="detail-switch">切源</button>
+        </div>
+      </div>
+    </div>
+    <div class="detail-ep-head">
+      <span class="ep-title">选集</span>
+      <button class="ghost-btn" id="ep-sort">正序</button>
+      <div id="ep-lines" class="ep-lines"></div>
+    </div>
+    <div id="detail-eps" class="ep-grid"></div>
+  </div>
+</div>
+
+<!-- 通用输入框弹层（配置/导入）—— 带"接口类型"选择：点播 / 直播，两侧互不干扰 -->
+<div id="prompt" class="modal hidden">
+  <div class="prompt-box">
+    <h3 id="prompt-title">输入</h3>
+    <div id="prompt-type-row" class="prompt-type-row">
+      <label for="prompt-scope">接口类型</label>
+      <select id="prompt-scope" class="sel">
+        <option value="vod">点播接口</option>
+        <option value="live">直播接口</option>
+      </select>
+    </div>
+    <textarea id="prompt-text" spellcheck="false" placeholder="在这里粘贴内容…"></textarea>
+    <div class="prompt-actions">
+      <button class="ghost-btn" id="prompt-cancel">取消</button>
+      <button class="solid-btn" id="prompt-ok">确定</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="/static/hls.min.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
