@@ -132,37 +132,17 @@ async function loadHome() {
   if (!state.sites.length) { $('#home-classes').innerHTML = ''; wrap.innerHTML = '<div class="empty-big">未配置点播源。到「设置 → 配置地址」粘贴 TVBox 配置或导入订阅。</div>'; return; }
   let key = state.homeKey || state.sites[0].key;
   wrap.innerHTML = '<div class="empty-big">加载中…</div>';
-  // 当前站点失败（超时/失效）时依次尝试其它站点，自动降级到可用源
-  let home = null, usedKey = key;
-  const tried = new Set();
-  const candidates = [key, ...state.sites.map(s => s.key).filter(k => k !== key)];
-  let attempts = 0;
-  for (const k of candidates) {
-    if (tried.has(k) || attempts >= 6) break; tried.add(k); attempts++;
-    try { home = await apiTimeout('/api/vod/home', { key: k }, 9000); }
-    catch (e) { home = null; continue; }
-    if (home && (home.classes?.length || home.videos?.length || home.list?.length)) { usedKey = k; break; }
-    home = null;
-  }
+  // 只请求当前选中的站源：解析失败就明确提示，绝不自动切到其它源
+  let home = null;
+  try { home = await apiTimeout('/api/vod/home', { key }, 9000); } catch (e) { home = null; }
   if (seq !== homeLoadSeq) return;
-  if (!home) {
+  if (!home || !(home.classes?.length || home.videos?.length || home.list?.length)) {
     $('#home-classes').innerHTML = '';
-    $('#home-tip').textContent = '源：' + (state.sites.find(s => s.key === key)?.name || key);
-    wrap.innerHTML = '<div class="empty-big">当前站源都连接失败（可能已失效）。<br><a href="#" id="home-restore" style="color:var(--focus2);text-decoration:underline">点此一键恢复内置可用站源</a>　或检查网络。</div>';
-    const restore = $('#home-restore');
-    if (restore) restore.onclick = async e => {
-      e.preventDefault();
-      try {
-        const cfg = await api('/api/config/preset');
-        state.config = cfg; applyConfig(); renderSettings();
-        LS.set('homeKey', state.homeKey);
-        toast(`已恢复内置预置：${cfg.sites.length} 个可用站点`);
-        loadHome(); loadVodClasses(); loadLiveSources();
-      } catch (err) { toast('恢复失败：' + err.message); }
-    };
+    const siteName = state.sites.find(s => s.key === key)?.name || key;
+    $('#home-tip').textContent = '源：' + siteName;
+    wrap.innerHTML = `<div class="empty-big">当前站点「${esc(siteName)}」内容加载失败（可能已失效或网络问题）。<br>请在上方「站源」下拉框中切换其它站点，或到「设置 → 配置地址」重新导入。</div>`;
     return;
   }
-  key = usedKey;
   state.homeKey = key;
   const site = state.sites.find(s => s.key === key);
   $('#home-tip').textContent = '源：' + (site?.name || key);
@@ -208,21 +188,18 @@ async function loadVodClasses() {
   sel.innerHTML = state.sites.map(s => `<option value="${esc(s.key)}">${esc(s.name)}</option>`).join('');
   if (!state.sites.length) { $('#vod-classes').innerHTML = ''; $('#vod-grid').innerHTML = ''; $('#vod-empty').style.display = ''; return; }
   let key = state.vodKey || state.sites[0].key;
-  sel.value = key; // 先反映当前选择，降级请求期间下拉框也保持正确
-  // 当前站点 home 失败（超时/失效）时，依次尝试其它站点，自动降级到可用源
+  sel.value = key;
+  // 只请求当前选中的站源：解析失败就明确提示，绝不自动切到其它源
   let home = null;
-  const tried = new Set();
-  const candidates = [key, ...state.sites.map(s => s.key).filter(k => k !== key)];
-  let attempts = 0;
-  for (const k of candidates) {
-    if (tried.has(k) || attempts >= 5) break; tried.add(k); attempts++;
-    try {
-      home = await apiTimeout('/api/vod/home', { key: k }, 9000);
-    } catch (e) { home = null; continue; }
-    if (home && (home.classes?.length || home.list?.length)) { key = k; break; }
-    home = null;
+  try { home = await apiTimeout('/api/vod/home', { key }, 9000); } catch (e) { home = null; }
+  if (!home || !(home.classes?.length || home.list?.length)) {
+    state.vodKey = key; sel.value = key;
+    $('#vod-classes').innerHTML = ''; $('#vod-grid').innerHTML = '';
+    $('#vod-empty').style.display = '';
+    const siteName = state.sites.find(s => s.key === key)?.name || key;
+    $('#vod-empty').textContent = `当前站点「${siteName}」解析失败，请在上方站源下拉框中切换其它站点，或到「设置 → 配置地址」重新导入。`;
+    return;
   }
-  if (!home) { state.vodKey = key; sel.value = key; $('#vod-classes').innerHTML = ''; $('#vod-grid').innerHTML = ''; $('#vod-empty').style.display = ''; $('#vod-empty').textContent = '所有点播源都连接失败，请检查网络或到「设置 → 配置地址」重新导入'; return; }
   state.vodKey = key; LS.set('vodKey', key); sel.value = key;
   try {
     const classes = home.classes || [];

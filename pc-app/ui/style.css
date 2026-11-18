@@ -327,8 +327,8 @@ html,body{scrollbar-width:none;-ms-overflow-style:none}
 .player-top .ico-btn{pointer-events:auto;background:rgba(0,0,0,.6)}
 .player-title{font-size:18px;color:#fff;text-shadow:0 0 8px #000}
 .player-bottom{
-  /* 上移到原生控制条（进度条）上方，避免遮挡进度条 */
-  position:absolute;bottom:76px;left:50%;transform:translateX(-50%);
+  /* 抬到原生控制条（进度条）上方足够高度，避免各种 DPI 下遮挡 */
+  position:absolute;bottom:104px;left:50%;transform:translateX(-50%);
   display:flex;gap:10px;align-items:center;background:rgba(0,0,0,.7);
   padding:10px 16px;border-radius:8px;border:1px solid #333;
 }
