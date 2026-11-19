@@ -296,7 +296,7 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
 
     @Override
     public float getSizeInDp() {
-        // 横屏沿用 1280×720 设计基准；竖屏按 720 高度基准适配，避免控件被压缩错位
+        // 横竖屏统一按宽度 1280 基准适配（超宽屏除外），保证布局等比缩放不裁切
         return isBaseOnWidth() ? 1280 : 720;
     }
 
