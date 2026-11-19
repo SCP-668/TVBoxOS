@@ -306,5 +306,12 @@ public abstract class BaseLazyFragment extends Fragment implements CustomAdapt {
         return true;
     }
 
+    /** 网格列数，委托给 Activity，竖屏窄屏自动减少列数 */
+    public int gridSpanCount() {
+        if (getActivity() instanceof com.github.tvbox.osc.base.BaseActivity)
+            return ((com.github.tvbox.osc.base.BaseActivity) getActivity()).gridSpanCount();
+        return isBaseOnWidth() ? 5 : 6;
+    }
+
 
 }

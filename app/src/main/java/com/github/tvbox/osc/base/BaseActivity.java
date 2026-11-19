@@ -3,6 +3,7 @@ package com.github.tvbox.osc.base;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
@@ -77,6 +78,24 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
         CutoutUtil.adaptCutoutAboveAndroidP(mContext, true);//设置刘海
         AppManager.getInstance().addActivity(this);
         init();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // 横竖屏切换后，重算屏幕比例并按新方向重新适配尺寸，避免控件错位/错位残留
+        try {
+            DisplayMetrics dm = new DisplayMetrics();
+            getWindowManager().getDefaultDisplay().getMetrics(dm);
+            updateScreenRatio(dm);
+            AutoSizeConfig.getInstance()
+                    .setScreenWidth(dm.widthPixels)
+                    .setScreenHeight(dm.heightPixels);
+            AutoSizeCompat.autoConvertDensityOfCustomAdapt(super.getResources(), this);
+            getWindow().getDecorView().requestLayout();
+        } catch (Throwable th) {
+            th.printStackTrace();
+        }
     }
 
     @Override
@@ -264,14 +283,29 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
         return "";
     }
 
+    /** 当前是否为竖屏（响应横竖屏切换的核心判定） */
+    public boolean isPortrait() {
+        return getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+    }
+
     @Override
     public float getSizeInDp() {
+        // 横屏沿用 1280×720 设计基准；竖屏按 720 高度基准适配，避免控件被压缩错位
         return isBaseOnWidth() ? 1280 : 720;
     }
 
     @Override
     public boolean isBaseOnWidth() {
+        // 竖屏：按高度适配（mm 尺寸以 720 为基准缩放，竖屏布局比例正确）
+        // 横屏：保持原逻辑（超宽屏按高度，普通按宽度）
+        if (isPortrait()) return false;
         return !(screenRatio >= 4.0f);
+    }
+
+    /** 网格列数：竖屏窄屏用 2 列，横屏沿用原 5/6 列 */
+    public int gridSpanCount() {
+        if (isPortrait()) return 2;
+        return isBaseOnWidth() ? 5 : 6;
     }
 
     protected static BitmapDrawable globalWp = null;
