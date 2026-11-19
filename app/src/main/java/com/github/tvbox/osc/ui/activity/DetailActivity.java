@@ -709,10 +709,11 @@ public class DetailActivity extends BaseActivity {
             }
         }
         w += 32;
-        int screenWidth = getWindowManager().getDefaultDisplay().getWidth()/3;
-        int offset = screenWidth/w;
+        // 竖屏手机：剧集网格列数适当减少，按钮更大更好点；横屏保持原有逻辑
+        int screenWidth = getWindowManager().getDefaultDisplay().getWidth();
+        int offset = screenWidth / (isPortrait() ? 4 : 3) / w;
         if(offset <=2) offset =2;
-        if(offset > 6) offset =6;
+        if(offset > (isPortrait() ? 4 : 6)) offset = isPortrait() ? 4 : 6;
         mGridViewLayoutMgr.setSpanCount(offset);
         seriesAdapter.setNewData(vodInfo.seriesMap.get(vodInfo.playFlag));
 
@@ -1964,6 +1965,9 @@ public class DetailActivity extends BaseActivity {
     private boolean previewOrientationChanged;
     ViewGroup.LayoutParams windowsPreview = null;
     ViewGroup.LayoutParams windowsFull = null;
+    // 竖屏手机：进入详情页保持竖屏，点全屏才切横屏，退出全屏恢复竖屏。
+    // 仅在确实由本页主动切换过方向时才恢复，避免覆盖用户在系统里的手动旋转设置。
+    private boolean orientationForcedByDetail = false;
 
     void toggleFullPreview() {
         setFullPreview(!fullWindows);
@@ -2035,6 +2039,15 @@ public class DetailActivity extends BaseActivity {
         if (full) {
             previewOrientation = getResources().getConfiguration().orientation;
             previewOrientationChanged = false;
+            // 竖屏手机进入全屏播放时切到横屏；横屏设备/横屏状态不做处理
+            if (previewOrientation == Configuration.ORIENTATION_PORTRAIT && !com.github.tvbox.osc.util.ScreenUtils.isTv(this)) {
+                orientationForcedByDetail = true;
+                setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+            }
+        } else if (orientationForcedByDetail) {
+            // 退出全屏恢复竖屏
+            orientationForcedByDetail = false;
+            setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         }
         fullWindows = full;
         if (playFragment != null) {
