@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- PC 端视觉风格统一：深蓝紫 · 电紫 · 品红 · 青 -->
+    <color name="pc_focus">#5B4FE9</color>
+    <color name="pc_focus2">#FF4FA3</color>
+    <color name="pc_cyan">#22D3EE</color>
+    <color name="pc_card">#CC151A3A</color>
+    <color name="pc_card_focus">#CC242B57</color>
+    <color name="pc_text">#EAF0FF</color>
+    <color name="pc_muted">#9BA6C4</color>
     <color name="color_6200EE">#5B4FE9</color>
     <color name="color_3700B3">#3F35B8</color>
     <color name="color_03DAC5">#22D3EE</color>

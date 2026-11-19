@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 竖屏专用：海报卡片放大（配合 gridSpanCount 竖屏 3 列），横屏走 values/dimens.xml 不受影响 -->
+    <dimen name="vs_214">330mm</dimen>
+    <dimen name="vs_280">432mm</dimen>
+</resources>

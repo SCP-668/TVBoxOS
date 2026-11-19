@@ -310,8 +310,9 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
         return !(screenRatio >= 4.0f);
     }
 
-    /** 网格列数：沿用原 5/6 列。按宽度适配后竖屏横向正好铺满，无需减少列数 */
+    /** 网格列数：横屏沿用原 5/6 列；竖屏 3 列 + 放大卡片（配合 values-port/dimens.xml），更好看 */
     public int gridSpanCount() {
+        if (isPortrait()) return 3;
         return isBaseOnWidth() ? 5 : 6;
     }
 
@@ -354,6 +355,6 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
         if (globalWp != null)
             getWindow().setBackgroundDrawable(globalWp);
         else
-            getWindow().setBackgroundDrawableResource(R.drawable.app_bg);
+            getWindow().setBackgroundDrawableResource(R.drawable.pc_bg);
     }
 }
