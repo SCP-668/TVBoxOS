@@ -94,11 +94,13 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
         super.onFragmentResume();
         if (isPortrait()) {
             // 竖屏：首页推荐改成 2 列大卡片网格，配合 layout-port/fragment_user.xml
-            // 让海报区铺满剩余屏幕，方便手机竖屏浏览（横屏逻辑完全不动）
+            // 卡片宽度 match_parent 填满网格列；间距由 TvRecyclerView 的 tv_horizontalSpacingWithMargins/
+            // tv_verticalSpacingWithMargins 统一提供，左右用相同的负 margin 抵消，保证两侧对称。
             tvHotList.setVisibility(View.VISIBLE);
             tvHotList.setHasFixedSize(true);
             tvHotList.setLayoutManager(new V7GridLayoutManager(this.mContext, 2));
-            int pad = -tvHotList.mHorizontalSpacingWithMargins / 2 + getResources().getDimensionPixelSize(R.dimen.vs_6);
+            int pad = -tvHotList.mHorizontalSpacingWithMargins / 2
+                    + getResources().getDimensionPixelSize(R.dimen.vs_20);
             tvHotList.setPadding(pad, 0, pad, 0);
             return;
         }

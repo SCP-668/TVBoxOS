@@ -79,6 +79,12 @@ public class HomeHotVodAdapter extends BaseQuickAdapter<Movie.Video, BaseViewHol
 
     private void applyStyleToImage(final ImageView ivThumb) {
         if (style != null) {
+            // 竖屏走 layout-port 的整列宽度卡片，不能用横屏的固定宽度覆盖，
+            // 否则固定宽度小于列宽、item 靠左对齐会造成左右间距不一致。
+            if (mContext.getResources().getConfiguration().orientation
+                    == android.content.res.Configuration.ORIENTATION_PORTRAIT) {
+                return;
+            }
             ViewGroup container = (ViewGroup) ivThumb.getParent();
             int width = defaultWidth;
             int height = (int) (width / style.ratio);

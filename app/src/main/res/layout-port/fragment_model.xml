@@ -12,6 +12,10 @@
         android:paddingRight="@dimen/vs_20"
         android:paddingTop="@dimen/vs_10"
         android:paddingBottom="@dimen/vs_20">
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="@dimen/vs_10" android:layout_marginBottom="@dimen/vs_6" android:paddingLeft="@dimen/vs_6">
+            <View android:layout_width="@dimen/vs_5" android:layout_height="@dimen/ts_28" android:background="@color/pc_cyan" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/vs_10" android:text="配置与站点" android:textColor="@color/pc_cyan" android:textSize="@dimen/ts_28" android:textStyle="bold" />
+        </LinearLayout>
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/llDebug" android:layout_width="match_parent" android:layout_height="@dimen/vs_78" android:layout_marginBottom="@dimen/vs_10" android:background="@drawable/shape_setting_model_focus" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:paddingLeft="@dimen/vs_20" android:paddingRight="@dimen/vs_20" android:visibility="gone">
         
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="调试模式" android:textColor="@android:color/white" android:textSize="@dimen/ts_28" />
@@ -62,6 +66,10 @@
         
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="@dimen/vs_10" android:layout_marginLeft="@dimen/vs_10" android:text="&gt;" android:textColor="@android:color/white" android:textSize="@dimen/ts_28" />
                         </LinearLayout>
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="@dimen/vs_10" android:layout_marginBottom="@dimen/vs_6" android:paddingLeft="@dimen/vs_6">
+            <View android:layout_width="@dimen/vs_5" android:layout_height="@dimen/ts_28" android:background="@color/pc_cyan" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/vs_10" android:text="首页与搜索" android:textColor="@color/pc_cyan" android:textSize="@dimen/ts_28" android:textStyle="bold" />
+        </LinearLayout>
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/tvHomeLive" android:layout_width="match_parent" android:layout_height="@dimen/vs_78" android:background="@drawable/shape_setting_model_focus" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:paddingLeft="@dimen/vs_20" android:paddingRight="@dimen/vs_20" android:layout_marginBottom="@dimen/vs_10">
         
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="下次进入" android:textColor="@android:color/white" android:textSize="@dimen/ts_28" />
@@ -112,6 +120,10 @@
         
                                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="@dimen/vs_10" android:layout_marginLeft="@dimen/vs_10" android:text="&gt;" android:textColor="@android:color/white" android:textSize="@dimen/ts_28" />
                             </LinearLayout>
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="@dimen/vs_10" android:layout_marginBottom="@dimen/vs_6" android:paddingLeft="@dimen/vs_6">
+            <View android:layout_width="@dimen/vs_5" android:layout_height="@dimen/ts_28" android:background="@color/pc_cyan" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/vs_10" android:text="播放与解码" android:textColor="@color/pc_cyan" android:textSize="@dimen/ts_28" android:textStyle="bold" />
+        </LinearLayout>
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/llPlay" android:layout_width="match_parent" android:layout_height="@dimen/vs_78" android:background="@drawable/shape_setting_model_focus" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:paddingLeft="@dimen/vs_20" android:paddingRight="@dimen/vs_20" android:layout_marginBottom="@dimen/vs_10">
         
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="播放器" android:textColor="@android:color/white" android:textSize="@dimen/ts_28" />
@@ -203,6 +215,10 @@
         
                             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="@dimen/vs_10" android:layout_marginLeft="@dimen/vs_10" android:text="&gt;" android:textColor="@android:color/white" android:textSize="@dimen/ts_28" />
                         </LinearLayout>
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="@dimen/vs_10" android:layout_marginBottom="@dimen/vs_6" android:paddingLeft="@dimen/vs_6">
+            <View android:layout_width="@dimen/vs_5" android:layout_height="@dimen/ts_28" android:background="@color/pc_cyan" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/vs_10" android:text="历史与界面" android:textColor="@color/pc_cyan" android:textSize="@dimen/ts_28" android:textStyle="bold" />
+        </LinearLayout>
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/llHistoryMerge" android:layout_width="match_parent" android:layout_height="@dimen/vs_78" android:background="@drawable/shape_setting_model_focus" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:paddingLeft="@dimen/vs_20" android:paddingRight="@dimen/vs_20" android:layout_marginBottom="@dimen/vs_10">
         
                                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="历史合并" android:textColor="@android:color/white" android:textSize="@dimen/ts_28" />
@@ -259,6 +275,10 @@
         
                                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="@dimen/vs_10" android:layout_marginLeft="@dimen/vs_10" android:text="&gt;" android:textColor="@android:color/white" android:textSize="@dimen/ts_28" />
                             </LinearLayout>
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="@dimen/vs_10" android:layout_marginBottom="@dimen/vs_6" android:paddingLeft="@dimen/vs_6">
+            <View android:layout_width="@dimen/vs_5" android:layout_height="@dimen/ts_28" android:background="@color/pc_cyan" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginLeft="@dimen/vs_10" android:text="缓存与数据" android:textColor="@color/pc_cyan" android:textSize="@dimen/ts_28" android:textStyle="bold" />
+        </LinearLayout>
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@+id/llIjkCachePlay" android:layout_width="match_parent" android:layout_height="@dimen/vs_78" android:background="@drawable/shape_setting_model_focus" android:focusable="true" android:gravity="center_vertical" android:orientation="horizontal" android:paddingLeft="@dimen/vs_20" android:paddingRight="@dimen/vs_20" android:layout_marginBottom="@dimen/vs_10">
         
                                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="IJK缓存" android:textColor="@android:color/white" android:textSize="@dimen/ts_28" />
