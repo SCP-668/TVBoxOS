@@ -88,11 +88,9 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
             DisplayMetrics dm = new DisplayMetrics();
             getWindowManager().getDefaultDisplay().getMetrics(dm);
             updateScreenRatio(dm);
-            AutoSizeConfig.getInstance()
-                    .setScreenWidth(dm.widthPixels)
-                    .setScreenHeight(dm.heightPixels);
             AutoSizeCompat.autoConvertDensityOfCustomAdapt(super.getResources(), this);
-            getWindow().getDecorView().requestLayout();
+            View decorView = getWindow().getDecorView();
+            if (decorView != null) decorView.requestLayout();
         } catch (Throwable th) {
             th.printStackTrace();
         }
@@ -285,7 +283,15 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
 
     /** 当前是否为竖屏（响应横竖屏切换的核心判定） */
     public boolean isPortrait() {
-        return getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+        // 关键：必须用 super.getResources()，不能调用 getResources()。
+        // 本类重写了 getResources()，其中会触发 AutoSize 回调 isBaseOnWidth()/getSizeInDp()，
+        // 而这两个方法又会调用 isPortrait()——若此处再调用 getResources() 将形成无限递归，
+        // 导致 StackOverflowError 启动闪退。super.getResources() 绕过重写，取原始 Resources。
+        try {
+            return super.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT;
+        } catch (Throwable th) {
+            return false;
+        }
     }
 
     @Override
