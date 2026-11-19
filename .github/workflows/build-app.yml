@@ -41,13 +41,29 @@ jobs:
           echo "--- build.gradle 签名段预览 ---"
           grep -n "signingConfig\|myConfig\|RELEASE_" app/build.gradle | head -20
 
+      - name: Generate local.properties
+        run: |
+          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}}"
+          if [ ! -d "$SDK_DIR" ]; then
+            echo "::error::Android SDK not found at $SDK_DIR"
+            exit 1
+          fi
+          echo "sdk.dir=$SDK_DIR" > local.properties
+          echo "generated local.properties:"
+          cat local.properties
+          # pyramid 模块的 Chaquopy 插件配置阶段会读 local.properties 找 SDK；
+          # 本流水线只构建 java 系列 flavor，不编译 python 代码，故无需 Windows 的 buildPython。
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # 只构建 java/java32/java64 三个 flavor：
+      # 它们不依赖 :pyramid，避开 Chaquopy 写死的 D:/Programs/Python 路径。
       - name: Build Release APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --build-cache --parallel --warning-mode all --no-daemon
+          ./gradlew assembleJavaRelease assembleJava32Release assembleJava64Release \
+            --build-cache --parallel --warning-mode all --no-daemon
 
       - name: Prepare APKs
         run: |
