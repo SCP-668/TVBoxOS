@@ -123,6 +123,17 @@ function normalizeParse(x) {
   return { key: str(x.key || x.id || x.name), name: str(x.name || x.title || x.key), url: str(x.url || x.api || x.u), type: x.type != null ? Number(x.type) : 0 };
 }
 
+// 小说/听书源：猫影视 read.sites，用 api(cat.js 文件名) 作为 key 线索，PC 端原生适配
+function normalizeRead(x) {
+  if (!x || typeof x !== 'object') return null;
+  const api = str(x.api || x.url || '');
+  const name = str(x.name || x.title || '') || '未命名';
+  const key = str(x.key || x.id) || (name + '_' + api).replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '').slice(0, 24);
+  if (!api && !key) return null;
+  // 保留 api 文件名（如 bookan_open.js）用于匹配原生实现
+  return { key, name, api, type: x.type != null ? Number(x.type) : 10, driver: api.replace(/_open\.js$/, '').replace(/\.js$/, '') };
+}
+
 // 解析订阅文本 → 规范化配置；urls 字段为需要继续抓取的子订阅地址
 function parseConfigText(text) {
   let cfg = toJson(text);
@@ -137,27 +148,31 @@ function parseConfigText(text) {
   if (Array.isArray(cfg)) cfg = { sites: cfg };
   if (!cfg || typeof cfg !== 'object') throw new Error('订阅格式无法识别');
 
-  const sites = arr(cfg.sites || cfg.site).map(normalizeSite).filter(Boolean);
+  const siteSrc = cfg.sites || cfg.site || (cfg.video && cfg.video.sites);
+  const sites = arr(siteSrc).map(normalizeSite).filter(Boolean);
   const lives = arr(cfg.lives || cfg.live).map(normalizeLive).filter(Boolean);
   const parses = arr(cfg.parses || cfg.parse).map(normalizeParse).filter(Boolean);
+  // 猫影视嵌套结构：video.sites / read.sites / pan.sites
+  const reads = arr((cfg.read && cfg.read.sites) || cfg.reads).map(normalizeRead).filter(Boolean);
   // 多仓订阅里 urls 可能是字符串数组，也可能是 {url,name} 对象数组
   const urls = arr(cfg.urls || cfg.url)
     .map(u => (u && typeof u === 'object' ? str(u.url || u.u || u.api || '') : str(u)))
     .filter(u => /^https?:\/\//i.test(u));
 
-  return { sites, lives, parses, urls };
+  return { sites, lives, parses, reads, urls };
 }
 
 // 合并多份配置，按 key + 地址去重
 function mergeConfigs(list) {
-  const sites = [], lives = [], parses = [];
-  const sk = new Set(), lk = new Set(), pk = new Set();
+  const sites = [], lives = [], parses = [], reads = [];
+  const sk = new Set(), lk = new Set(), pk = new Set(), rk = new Set();
   for (const c of list) {
     for (const s of c.sites || []) { const k = s.key + '|' + s.api; if (!sk.has(k)) { sk.add(k); sites.push(s); } }
     for (const l of c.lives || []) { const k = l.key + '|' + l.url; if (!lk.has(k)) { lk.add(k); lives.push(l); } }
     for (const p of c.parses || []) { const k = p.key + '|' + p.url; if (!pk.has(k)) { pk.add(k); parses.push(p); } }
+    for (const r of c.reads || []) { const k = r.key + '|' + r.api; if (!rk.has(k)) { rk.add(k); reads.push(r); } }
   }
-  return { sites, lives, parses };
+  return { sites, lives, parses, reads };
 }
 
 module.exports = { parseConfigText, mergeConfigs, stripJsonComments, toJson };

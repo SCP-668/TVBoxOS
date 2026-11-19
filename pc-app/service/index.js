@@ -2,45 +2,66 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
-const { httpGet, rewriteM3U8, isHttpUrl, cacheClear } = require('./util');
+const { httpGet, rewriteM3U8, isHttpUrl, cacheClear, setNetworkAccel } = require('./util');
 const spider = require('./spider');
 const live = require('./live');
+const read = require('./read');
+const downloader = require('./download');
 const { parseConfigText, mergeConfigs } = require('./configParser');
 
 const PORT = Number(process.env.PORT || 32124);
 const HOST = process.env.HOST || '127.0.0.1';
 const DATA_DIR = process.env.TVBOX_DATA || path.join(__dirname, 'data');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
+const ACCEL_FILE = path.join(DATA_DIR, 'netaccel.json');
 const UI_DIR = path.join(__dirname, '..', 'ui');
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 
+// 网络加速开关状态（独立文件，不混入 config）
+function loadAccel() {
+  try { return { enabled: !!JSON.parse(fs.readFileSync(ACCEL_FILE, 'utf8')).enabled }; }
+  catch { return { enabled: false }; }
+}
+setNetworkAccel(loadAccel().enabled);
+
 const DEFAULT_CONFIG = {
   sites: [],
-  lives: [
-    { key: 'zbds', name: 'zbds-IPTV4', url: 'https://live.zbds.top/tv/iptv4.txt', ua: '' },
-    { key: 'iyouhun', name: '游魂直播', url: 'https://www.iyouhun.com/tv/zb', ua: '' },
-  ],
+  lives: [],
   parses: [],
+  reads: [],
   vodApiUrl: '',    // 点播配置地址（与直播互不干扰）
   liveApiUrl: '',   // 直播配置地址（与点播互不干扰）
 };
 
 const PRESET_FILE = path.join(__dirname, 'preset.json');
 const SOURCES_FILE = path.join(__dirname, 'preset-sources.json');
+// 用户数据目录里的接口清单/预置：优先使用；项目内不再内置任何接口数据
+const USER_SOURCES_FILE = path.join(DATA_DIR, 'sources.json');
+const USER_PRESET_FILE = path.join(DATA_DIR, 'preset.json');
 
-// 内置接口清单：随安装包分发，供"配置历史"逐条列出接入的订阅地址
+// 接口清单：只读用户数据目录（首次启动时由安装包迁移过来），项目内预设为空
 function loadSources() {
   try {
-    const s = JSON.parse(fs.readFileSync(SOURCES_FILE, 'utf8'));
+    const s = JSON.parse(fs.readFileSync(USER_SOURCES_FILE, 'utf8'));
     return { vod: Array.isArray(s.vod) ? s.vod : [], live: Array.isArray(s.live) ? s.live : [] };
   } catch { return { vod: [], live: [] }; }
 }
+function saveSources(s) {
+  fs.writeFileSync(USER_SOURCES_FILE, JSON.stringify(s, null, 2));
+  return s;
+}
+// 真正删除一条接口（vod/live），持久化到用户数据目录
+function deleteSource(kind, url) {
+  const s = loadSources();
+  if (kind === 'vod' || kind === 'live') s[kind] = (s[kind] || []).filter(x => x.url !== url);
+  return saveSources(s);
+}
 
-// 内置预置站点（随安装包分发，首次启动自动写入）
+// 预置站点：只读用户数据目录；项目内 preset.json 为空（新安装不再内置）
 function loadPreset() {
   try {
-    const p = JSON.parse(fs.readFileSync(PRESET_FILE, 'utf8'));
+    const p = JSON.parse(fs.readFileSync(USER_PRESET_FILE, 'utf8'));
     if (p && Array.isArray(p.sites) && p.sites.length) return p;
   } catch {}
   return null;
@@ -59,7 +80,7 @@ function loadConfig() {
   catch {
     const preset = loadPreset();
     cfg = preset
-      ? { sites: preset.sites, lives: (preset.lives && preset.lives.length ? preset.lives : DEFAULT_CONFIG.lives), parses: preset.parses || [], apiUrl: 'preset', vodApiUrl: 'preset', liveApiUrl: 'preset' }
+      ? { sites: preset.sites, lives: (preset.lives && preset.lives.length ? preset.lives : DEFAULT_CONFIG.lives), parses: preset.parses || [], reads: preset.reads || [], apiUrl: 'preset', vodApiUrl: 'preset', liveApiUrl: 'preset' }
       : { ...DEFAULT_CONFIG };
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2));
     return cfg;
@@ -73,6 +94,8 @@ function loadConfig() {
   let migrated = false;
   if (cfg.apiUrl && cfg.vodApiUrl === undefined) { cfg.vodApiUrl = cfg.apiUrl === 'preset' ? 'preset' : cfg.apiUrl; migrated = true; }
   if (cfg.liveApiUrl === undefined) { cfg.liveApiUrl = cfg.apiUrl === 'preset' ? 'preset' : (cfg.apiUrl || ''); migrated = true; }
+  // 老配置补 reads 字段
+  if (!Array.isArray(cfg.reads)) { cfg.reads = []; migrated = true; }
   if (migrated) { try { fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2)); } catch {} }
   return cfg;
 }
@@ -91,6 +114,7 @@ function mergeConfigScoped(base, parsed, scope, apiUrl) {
       ...base,
       sites: parsed.sites,
       parses: parsed.parses,
+      reads: parsed.reads || base.reads || [],
       vodApiUrl: apiUrl || base.vodApiUrl || '',
       apiUrl: apiUrl || base.apiUrl || '',
     };
@@ -108,6 +132,7 @@ function mergeConfigScoped(base, parsed, scope, apiUrl) {
     sites: parsed.sites,
     lives: parsed.lives,
     parses: parsed.parses,
+    reads: parsed.reads || base.reads || [],
     apiUrl: apiUrl || '',
     vodApiUrl: apiUrl || '',
     liveApiUrl: apiUrl || '',
@@ -124,7 +149,7 @@ async function fetchSubscription(url, seen = new Set(), depth = 0, meta = {}) {
   if (depth === 0) meta.rawText = r.text;
   console.log('[import] 抓取', url, '长度', r.text.length, '片段', r.text.replace(/\s+/g, ' ').slice(0, 100));
   const parsed = parseConfigText(r.text);
-  let all = { sites: parsed.sites, lives: parsed.lives, parses: parsed.parses };
+  let all = { sites: parsed.sites, lives: parsed.lives, parses: parsed.parses, reads: parsed.reads || [] };
   for (const sub of parsed.urls) {
     try {
       const child = await fetchSubscription(sub, seen, depth + 1);
@@ -188,8 +213,32 @@ async function handle(req, res) {
   try {
     // ---- 配置 ----
     if (p === '/api/config' && req.method === 'GET') return send(res, 200, loadConfig());
+    // 网络加速开关：读取 / 切换（开启走系统代理，关闭走直连）
+    if (p === '/api/netaccel' && req.method === 'GET') return send(res, 200, loadAccel());
+    if (p === '/api/netaccel' && req.method === 'POST') {
+      let body = ''; for await (const c of req) body += c;
+      let enabled = false;
+      try { enabled = !!JSON.parse(body).enabled; } catch {}
+      try { fs.writeFileSync(ACCEL_FILE, JSON.stringify({ enabled }, null, 2)); } catch {}
+      setNetworkAccel(enabled);
+      return send(res, 200, { enabled });
+    }
     // 接入的接口清单（点播/直播订阅地址），供配置历史逐条展示
     if (p === '/api/config/sources' && req.method === 'GET') return send(res, 200, loadSources());
+    // 本地接口快照（如从猫影视 open99 恢复的站点）：作为可被标准 import 流程读取的订阅源
+    // 数据只存用户数据目录，项目/安装包内不内置；删除清单项不影响此读取器
+    if (p === '/api/config/local/open99' && req.method === 'GET') {
+      try { return send(res, 200, fs.readFileSync(path.join(DATA_DIR, 'open99-local.json'), 'utf8')); }
+      catch { return send(res, 404, { error: '本地接口配置不存在' }); }
+    }
+    // 真正删除一条接口：从用户数据目录持久化移除（不是隐藏）
+    if (p === '/api/config/sources/delete' && req.method === 'POST') {
+      let body = ''; for await (const c of req) body += c;
+      let kind, url;
+      try { ({ kind, url } = JSON.parse(body)); } catch {}
+      if (!url || (kind !== 'vod' && kind !== 'live')) return send(res, 400, { error: '参数错误' });
+      return send(res, 200, deleteSource(kind, url));
+    }
     if (p === '/api/config' && req.method === 'POST') {
       let body = ''; for await (const c of req) body += c;
       return send(res, 200, saveConfig(JSON.parse(body)));
@@ -228,15 +277,16 @@ async function handle(req, res) {
       const meta = {};
       const parsed = await fetchSubscription(url, new Set(), 0, meta);
       const pr = pruneSites(parsed.sites);
+      const reads = (parsed.reads || []).filter(r => read.supported(r));
       if (scope === 'vod') {
-        if (!pr.ok.length) return send(res, 400, { error: `订阅里没有 PC 端可用的点播源（跳过 ${pr.skipped.length} 个需安卓爬虫运行时的站点）` });
-        const cfg = saveConfig(mergeConfigScoped(cur, { sites: pr.ok, parses: parsed.parses }, 'vod', url));
+        if (!pr.ok.length && !reads.length) return send(res, 400, { error: `订阅里没有 PC 端可用的点播源或小说源（跳过 ${pr.skipped.length} 个需安卓爬虫运行时的站点）` });
+        const cfg = saveConfig(mergeConfigScoped(cur, { sites: pr.ok, parses: parsed.parses, reads }, 'vod', url));
         return send(res, 200, { ...cfg, scope, skipped: pr.skipped.length, rawText: meta.rawText || '' });
       }
-      if (!pr.ok.length && !parsed.lives.length) {
-        return send(res, 400, { error: `订阅里没有 PC 端可用的点播源或直播源（跳过 ${pr.skipped.length} 个需安卓爬虫运行时的站点）` });
+      if (!pr.ok.length && !parsed.lives.length && !reads.length) {
+        return send(res, 400, { error: `订阅里没有 PC 端可用的点播源、直播源或小说源（跳过 ${pr.skipped.length} 个需安卓爬虫运行时的站点）` });
       }
-      const cfg = saveConfig(mergeConfigScoped(cur, { sites: pr.ok, lives: parsed.lives, parses: parsed.parses }, 'all', url));
+      const cfg = saveConfig(mergeConfigScoped(cur, { sites: pr.ok, lives: parsed.lives, parses: parsed.parses, reads }, 'all', url));
       return send(res, 200, { ...cfg, scope, skipped: pr.skipped.length, rawText: meta.rawText || '' });
     }
     // 直接粘贴订阅 JSON 文本导入（scope 同上）
@@ -252,18 +302,56 @@ async function handle(req, res) {
       }
       const parsed = parseConfigText(body);
       const pr = pruneSites(parsed.sites);
+      const reads = (parsed.reads || []).filter(r => read.supported(r));
       if (scope === 'vod') {
-        if (!pr.ok.length) return send(res, 400, { error: `文本里没有 PC 端可用的点播源（跳过 ${pr.skipped.length} 个需安卓爬虫运行时的站点）` });
-        const cfg = saveConfig(mergeConfigScoped(cur, { sites: pr.ok, parses: parsed.parses }, 'vod', 'pasted:vod'));
+        if (!pr.ok.length && !reads.length) return send(res, 400, { error: `文本里没有 PC 端可用的点播源或小说源（跳过 ${pr.skipped.length} 个需安卓爬虫运行时的站点）` });
+        const cfg = saveConfig(mergeConfigScoped(cur, { sites: pr.ok, parses: parsed.parses, reads }, 'vod', 'pasted:vod'));
         return send(res, 200, { ...cfg, scope, skipped: pr.skipped.length });
       }
-      if (!pr.ok.length && !parsed.lives.length) {
-        return send(res, 400, { error: `文本里没有 PC 端可用的点播源或直播源（跳过 ${pr.skipped.length} 个需安卓爬虫运行时的站点）` });
+      if (!pr.ok.length && !parsed.lives.length && !reads.length) {
+        return send(res, 400, { error: `文本里没有 PC 端可用的点播源、直播源或小说源（跳过 ${pr.skipped.length} 个需安卓爬虫运行时的站点）` });
       }
-      const cfg = saveConfig(mergeConfigScoped(cur, { sites: pr.ok, lives: parsed.lives, parses: parsed.parses }, 'all', 'pasted:all'));
+      const cfg = saveConfig(mergeConfigScoped(cur, { sites: pr.ok, lives: parsed.lives, parses: parsed.parses, reads }, 'all', 'pasted:all'));
       return send(res, 200, { ...cfg, scope, skipped: pr.skipped.length });
     }
     // 清空缓存（原版“清空缓存”：清掉站点/直播抓取缓存，回主页重新加载）
+    // ---- 本地下载：详情弹窗“下载”按钮，路径由设置页提供 ----
+    if (p === '/api/download/defaultDir') return send(res, 200, { dir: downloader.defaultDir() });
+    if (p === '/api/download/tasks') return send(res, 200, { tasks: downloader.list() });
+    if (p === '/api/download/control') {
+      const cfg = loadConfig();
+      const r = await downloader.control(q.get('op') || '', q.get('id') || '', {
+        withFiles: q.get('files') === '1',
+        site: siteByKey(cfg, q.get('siteKey') || ''),
+      });
+      return send(res, 200, { ok: true, result: r });
+    }
+    if (p === '/api/download/start') {
+      const cfg = loadConfig();
+      const t = downloader.start({
+        dir: q.get('dir') || '',
+        site: siteByKey(cfg, q.get('siteKey') || ''),
+        id: q.get('id') || '',
+        article: q.get('article') === '1',
+        line: q.get('line'),
+        epIdx: q.get('epIdx'),
+        name: q.get('name') || '',
+        kind: q.get('kind') || '',
+      });
+      return send(res, 200, t);
+    }
+    if (p === '/api/download') {
+      const cfg = loadConfig();
+      const r = await downloader.run({
+        dir: q.get('dir') || '',
+        site: siteByKey(cfg, q.get('siteKey') || ''),
+        id: q.get('id') || '',
+        article: q.get('article') === '1',
+        line: q.get('line'),
+        epIdx: q.get('epIdx'),
+      });
+      return send(res, 200, r);
+    }
     if (p === '/api/cache/clear' && req.method === 'POST') {
       const n = cacheClear();
       return send(res, 200, { ok: true, cleared: n });
@@ -286,7 +374,11 @@ async function handle(req, res) {
       // 优先用配置里对应源的 UA
       let ua = '';
       for (const l of cfg.lives) { if (target.startsWith(new URL(l.url).origin)) { ua = l.ua; break; } }
-      const r = await httpGet(target, { raw: true, timeout: 20000, ua: ua || undefined });
+      let r = await httpGet(target, { raw: true, timeout: 20000, ua: ua || undefined });
+      // 图文正文图片(img=1)：部分图床 https 被 CDN 拦(521)、http 可用，失败时降级重试一次
+      if (!r.ok && q.get('img') === '1' && target.startsWith('https://')) {
+        r = await httpGet('http://' + target.slice(8), { raw: true, timeout: 20000, ua: ua || undefined });
+      }
       if (!r.ok) return send(res, 502, { error: `上游返回 ${r.status}` });
       const ct = r.headers['content-type'] || '';
       if (/mpegurl|m3u8/i.test(ct) || /\.m3u8(\?|$)/i.test(target)) {
@@ -298,6 +390,8 @@ async function handle(req, res) {
       const safe = ['content-type', 'accept-ranges', 'content-range', 'etag', 'last-modified'];
       const extra = { 'Access-Control-Allow-Origin': '*' };
       for (const k of safe) if (r.headers[k]) extra[k] = r.headers[k];
+      // 图文/图片图集(img=1)：缩略图与灯箱放大用同一地址，缓存一段时间避免点击放大重复回源加载
+      if (q.get('img') === '1') extra['Cache-Control'] = 'public, max-age=1800';
       return send(res, 200, r.buf, ct || 'application/octet-stream', extra);
     }
 
@@ -327,7 +421,63 @@ async function handle(req, res) {
     if (p === '/api/vod/detail') {
       const cfg = loadConfig(); const s = siteByKey(cfg, q.get('key'));
       if (!s) return send(res, 400, { error: '未找到点播源' });
-      return send(res, 200, await spider.detail(s, q.get('id')));
+      return send(res, 200, await spider.detail(s, q.get('id'), { article: q.get('article') === '1' }));
+    }
+    // 图文/图片条目封面：列表是纯文字无缩略图，取详情正文首图。
+    // 图床 https 常被 CDN 拦(521)、http 可用，故由服务端带 UA 取图并原样返回，https 失败自动降级 http。
+    if (p === '/api/vod/cover') {
+      const cfg = loadConfig(); const s = siteByKey(cfg, q.get('key'));
+      const transparent = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+      if (!s) return send(res, 200, transparent, 'image/gif');
+      try {
+        const pic = await spider.cover(s, q.get('id'));
+        if (pic && isHttpUrl(pic)) {
+          const urls = [pic];
+          if (pic.startsWith('https://')) urls.push('http://' + pic.slice(8));
+          for (const u of urls) {
+            const r = await httpGet(u, { raw: true, timeout: 12000 });
+            if (r.ok && r.buf && r.buf.length) {
+              const ct = r.headers['content-type'] || 'image/jpeg';
+              return send(res, 200, r.buf, ct, { 'Cache-Control': 'public, max-age=1800' });
+            }
+          }
+        }
+      } catch (_) {}
+      return send(res, 200, transparent, 'image/gif');
+    }
+
+    // ---- 小说/听书 ----
+    function readByKey(cfg, key) { return (cfg.reads || []).find(s => s.key === key); }
+    if (p === '/api/read/sites') {
+      const cfg = loadConfig();
+      return send(res, 200, (cfg.reads || []).filter(s => read.supported(s)));
+    }
+    if (p === '/api/read/home') {
+      const cfg = loadConfig(); const s = readByKey(cfg, q.get('key'));
+      if (!s) return send(res, 400, { error: '未找到小说源' });
+      return send(res, 200, await read.home(s));
+    }
+    if (p === '/api/read/category') {
+      const cfg = loadConfig(); const s = readByKey(cfg, q.get('key'));
+      if (!s) return send(res, 400, { error: '未找到小说源' });
+      return send(res, 200, await read.category(s, q.get('tid'), q.get('pg') || 1));
+    }
+    if (p === '/api/read/search') {
+      const cfg = loadConfig();
+      const wd = q.get('wd') || '';
+      const keys = q.get('key') ? [q.get('key')] : (cfg.reads || []).filter(s => read.supported(s)).map(s => s.key);
+      const results = [];
+      for (const key of keys) {
+        const s = readByKey(cfg, key); if (!s) continue;
+        try { results.push(await read.search(s, wd, q.get('pg') || 1)); }
+        catch (e) { results.push({ siteKey: key, videos: [], error: e.message }); }
+      }
+      return send(res, 200, { keyword: wd, results });
+    }
+    if (p === '/api/read/detail') {
+      const cfg = loadConfig(); const s = readByKey(cfg, q.get('key'));
+      if (!s) return send(res, 400, { error: '未找到小说源' });
+      return send(res, 200, await read.detail(s, q.get('id')));
     }
 
     // ---- 本地文件（对应原版 LocalFileActivity）----

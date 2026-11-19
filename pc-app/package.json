@@ -7,6 +7,7 @@
   "license": "GPL-3.0",
   "scripts": {
     "start": "electron .",
+    "selftest": "node selftest.js",
     "dist": "electron-builder --win --x64",
     "pack": "electron-builder --win --x64 --dir"
   },
@@ -18,7 +19,7 @@
     "appId": "com.tvbox.pc",
     "productName": "TVBox PC",
     "directories": { "output": "dist" },
-    "files": ["main.js", "icon.ico"],
+    "files": ["main.js", "preload.js", "icon.ico"],
     "extraResources": [
       { "from": "service", "to": "service", "filter": ["**/*", "!data/**"] },
       { "from": "ui", "to": "ui", "filter": ["**/*"] }

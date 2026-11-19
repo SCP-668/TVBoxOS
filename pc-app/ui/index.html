@@ -6,23 +6,34 @@
 <title>TVBox</title>
 <link rel="stylesheet" href="/static/style.css">
 </head>
-<body>
+<body data-view="home">
 
-<!-- 顶部栏：应用名 + 导航 + 日期（对应原版 topLayout + mGridView） -->
-<header id="topbar">
+<!-- 自绘标题栏：logo 已移到最上方窗口控制栏（无边框窗口） -->
+<div id="app-titlebar">
   <div class="brand"><span class="logo-mark">▶</span><span id="appName">TVBox</span></div>
+  <div class="tb-spacer"></div>
+  <div class="clock"><span id="clockDate"></span><span id="clockTime"></span></div>
+  <div class="tb-controls">
+    <button class="tb-btn" id="tb-min" title="最小化" aria-label="最小化"><span>&#8722;</span></button>
+    <button class="tb-btn" id="tb-max" title="最大化" aria-label="最大化"><span>&#9723;</span></button>
+    <button class="tb-btn close" id="tb-close" title="关闭" aria-label="关闭"><span>&#10005;</span></button>
+  </div>
+</div>
+
+<!-- 顶部栏：只放导航（日期时间已移到窗口标题栏），水平居中 -->
+<header id="topbar">
   <nav id="nav">
     <button class="nav-btn active" data-view="home">首页</button>
     <button class="nav-btn" data-view="vod">点播</button>
+    <button class="nav-btn" data-view="read">小说</button>
     <button class="nav-btn" data-view="live">直播</button>
     <button class="nav-btn" data-view="push">推送</button>
-    <button class="nav-btn" data-view="file">本地</button>
     <button class="nav-btn" data-view="search">搜索</button>
     <button class="nav-btn" data-view="fav">收藏</button>
     <button class="nav-btn" data-view="history">历史</button>
+    <button class="nav-btn" data-view="downloads">下载</button>
     <button class="nav-btn" data-view="settings">设置</button>
   </nav>
-  <div class="clock"><span id="clockDate"></span><span id="clockTime"></span></div>
 </header>
 
 <main id="main">
@@ -32,6 +43,7 @@
     <div class="home-toolbar">
       <label class="lbl">首页站源</label>
       <select id="home-site" class="sel"></select>
+      <span class="site-spin" id="home-site-spin" aria-hidden="true"></span>
       <span id="home-tip" class="tip"></span>
     </div>
     <div id="home-classes" class="home-classes"></div>
@@ -44,15 +56,22 @@
   <section id="view-vod" class="view">
     <div class="vod-toolbar">
       <select id="vod-site" class="sel"></select>
-      <div id="vod-classes" class="chips"></div>
-      <div class="pager">
-        <button id="vod-prev" class="ico-btn">◀</button>
-        <span id="vod-page">1 / 1</span>
-        <button id="vod-next" class="ico-btn">▶</button>
-      </div>
+      <span class="site-spin" id="vod-site-spin" aria-hidden="true"></span>
     </div>
+    <div id="vod-classes" class="home-classes"></div>
     <div id="vod-grid" class="poster-grid"></div>
     <div id="vod-empty" class="empty-big">选择一个点播源和分类。</div>
+  </section>
+
+  <!-- ============ 小说/听书 ============ -->
+  <section id="view-read" class="view">
+    <div class="vod-toolbar">
+      <select id="read-site" class="sel"></select>
+      <span class="site-spin" id="read-site-spin" aria-hidden="true"></span>
+      <div id="read-classes" class="chips"></div>
+    </div>
+    <div id="read-grid" class="poster-grid"></div>
+    <div id="read-empty" class="empty-big">未适配的小说源。导入猫影视配置（含 read 区块）后，博看书源会自动出现在这里。</div>
   </section>
 
   <!-- ============ 直播：三栏 EPG（LivePlayActivity） ============ -->
@@ -131,7 +150,7 @@
   <!-- ============ 搜索：聚合搜索（SearchActivity） ============ -->
   <section id="view-search" class="view">
     <div class="search-top">
-      <input id="search-input" class="search-input" placeholder="输入片名，边输边搜…" autocomplete="off">
+      <input id="search-input" class="search-input" placeholder="输入片名，点击搜索…" autocomplete="off">
       <button id="search-btn" class="solid-btn">搜索</button>
     </div>
     <div id="search-hot" class="search-extra">
@@ -160,6 +179,17 @@
     <div id="history-empty" class="empty-big">还没有观看记录。</div>
   </section>
 
+  <!-- ============ 下载：资源下载进度 ============ -->
+  <section id="view-downloads" class="view">
+    <div class="settings-wrap">
+      <div class="set-group">
+        <div class="dl-toolbar"><div class="set-group-title">资源下载</div><button class="ghost-btn" id="download-clear-done" style="display:none">清空已完成</button></div>
+        <div class="download-tip">这里显示本机资源下载进度。完成后可播放已下载的视频，或打开所在文件夹。</div>
+        <div id="download-list" class="download-list"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ 设置：分组设置项（fragment_model） ============ -->
   <section id="view-settings" class="view">
     <div class="settings-wrap">
@@ -182,6 +212,8 @@
           <div class="set-item" id="set-home-style"><span class="si-name">首页多行</span><span class="si-val" id="set-home-style-val">开启</span><span class="si-arrow">›</span></div>
           <div class="set-item" id="set-search-view"><span class="si-name">搜索展示</span><span class="si-val" id="set-search-view-val">聚合</span><span class="si-arrow">›</span></div>
           <div class="set-item" id="set-fast"><span class="si-name">聚合搜索</span><span class="si-val" id="set-fast-val">开启</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-netaccel"><span class="si-name">网络加速</span><span class="si-val" id="set-netaccel-val">关闭</span><span class="si-arrow">›</span></div>
+          <div class="set-item" id="set-download-dir"><span class="si-name">下载路径</span><span class="si-val" id="set-download-dir-val">—</span><span class="si-arrow">›</span></div>
         </div>
 
         <div class="set-group">
@@ -215,6 +247,23 @@
     <input type="file" id="file-restore" accept="application/json,.json" style="display:none">
   </section>
 
+  <!-- ============ 数据源管理页：配置历史从弹窗升级为独立页面 ============ -->
+  <section id="view-sources" class="view sources-view">
+    <div class="sources-wrap">
+      <div class="sources-top">
+        <button class="sources-back" id="src-back" aria-label="返回设置">‹ 设置</button>
+        <div class="sources-heading">
+          <h1>数据源管理</h1>
+          <p>点播与直播分开切换，互不影响 · 点「应用」立即生效</p>
+        </div>
+        <button class="sources-refresh ico-btn" id="src-refresh" title="重新检测接口状态" aria-label="刷新">↻</button>
+      </div>
+      <div class="sources-columns" id="sources-columns">
+        <div class="sources-loading">正在读取接口清单…</div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ 通用列表选择弹窗（配置历史等） ============ -->
   <div id="list-modal" class="modal hidden">
     <div class="prompt-box">
@@ -238,11 +287,36 @@
       <button class="ico-btn" id="player-next">下一集 ⏭</button>
       <select id="player-line" class="sel"></select>
       <select id="player-ep" class="sel"></select>
+      <span class="player-vol">
+        <button class="ico-btn vol-mute" id="vod-mute" title="静音/取消静音">🔊</button>
+        <input type="range" id="vod-vol" min="0" max="100" step="1" value="80" aria-label="音量">
+        <span id="vod-vol-val" class="vol-val">80</span>
+      </span>
     </div>
     <div id="player-msg" class="player-msg"></div>
   </section>
 
 </main>
+
+<!-- 固定底栏：与顶部控制栏等高，承载点播分页，不随内容滚动 -->
+<div id="app-bottombar">
+  <div class="pager" id="vod-pager">
+    <button id="vod-first" class="ico-btn" title="首页">«</button>
+    <button id="vod-prev" class="ico-btn" title="上一页">◀</button>
+    <div id="vod-pages" class="pg-nums"></div>
+    <span id="vod-page">1 / 1</span>
+    <button id="vod-next" class="ico-btn" title="下一页">▶</button>
+    <button id="vod-last" class="ico-btn" title="末页">»</button>
+  </div>
+  <div class="pager" id="read-pager">
+    <button id="read-first" class="ico-btn" title="首页">«</button>
+    <button id="read-prev" class="ico-btn" title="上一页">◀</button>
+    <div id="read-pages" class="pg-nums"></div>
+    <span id="read-page">1 / 1</span>
+    <button id="read-next" class="ico-btn" title="下一页">▶</button>
+    <button id="read-last" class="ico-btn" title="末页">»</button>
+  </div>
+</div>
 
 <!-- ============ 详情弹层（activity_detail） ============ -->
 <div id="detail" class="modal hidden">
@@ -261,6 +335,8 @@
         <p id="detail-des" class="detail-des"></p>
         <div class="detail-actions">
           <button class="act primary" id="detail-play">立即播放</button>
+          <button class="act" id="detail-read" style="display:none">开始阅读</button>
+          <button class="act" id="detail-download">下载</button>
           <button class="act" id="detail-search">快速搜索</button>
           <button class="act" id="detail-fav">加入收藏</button>
           <button class="act" id="detail-switch">切源</button>
@@ -276,7 +352,61 @@
   </div>
 </div>
 
-<!-- 通用输入框弹层（配置/导入）—— 带"接口类型"选择：点播 / 直播，两侧互不干扰 -->
+<!-- ============ 网页文章阅读弹层（小说/图文，点击即阅读） ============ -->
+<div id="article-reader" class="modal hidden">
+  <div class="article-reader-box">
+    <div class="ar-bar">
+      <button class="ghost-btn" id="ar-back">← 返回列表</button>
+      <span class="ar-title" id="ar-title"></span>
+      <span class="ar-font">
+        <button class="ghost-btn" id="ar-font-minus">A-</button>
+        <span id="ar-font-label" class="tip"></span>
+        <button class="ghost-btn" id="ar-font-plus">A+</button>
+      </span>
+      <button class="modal-close" id="ar-close">✕</button>
+    </div>
+    <div class="ar-scroll" id="ar-scroll">
+      <h1 class="ar-h1" id="ar-h1"></h1>
+      <div class="ar-meta" id="ar-meta"></div>
+      <div class="ar-content" id="ar-content"></div>
+    </div>
+    <div class="ar-foot">
+      <button class="ghost-btn" id="ar-prev">← 上一篇</button>
+      <button class="ghost-btn" id="ar-next">下一篇 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 小说详情弹层 ============ -->
+<div id="read-detail" class="modal hidden">
+  <div class="detail-box read-detail-box">
+    <button class="modal-close" id="read-detail-close">✕</button>
+    <div class="detail-top">
+      <div class="detail-poster-wrap read-cover-wrap" id="read-cover-wrap"><img id="read-cover" class="detail-pic" src="" alt=""></div>
+      <div class="detail-info">
+        <h1 id="read-name"></h1>
+        <div class="detail-meta"><span id="read-site-name"></span><span id="read-remarks"></span></div>
+        <p id="read-des" class="detail-des"></p>
+        <div class="detail-actions">
+          <button class="act primary" id="read-play-first">开始收听</button>
+        </div>
+      </div>
+    </div>
+    <div class="detail-ep-head"><span class="ep-title">目录</span><span id="read-chapter-count" class="tip"></span></div>
+    <div id="read-chapters" class="ep-grid"></div>
+  </div>
+</div>
+
+<!-- ============ 图片浏览灯箱（全局，封面/详情图/图集点击放大） ============ -->
+<div id="lightbox" class="lightbox hidden">
+  <button class="lb-close" id="lb-close">✕</button>
+  <button class="lb-nav lb-prev" id="lb-prev">‹</button>
+  <img id="lb-img" src="" alt="">
+  <button class="lb-nav lb-next" id="lb-next">›</button>
+  <div class="lb-counter" id="lb-counter"></div>
+</div>
+
+<!-- 通用输入框弹层（配置/导入）—— 接口名称输入 + 可选的"接口类型"选择：点播 / 直播，两侧互不干扰 -->
 <div id="prompt" class="modal hidden">
   <div class="prompt-box">
     <h3 id="prompt-title">输入</h3>
@@ -286,6 +416,10 @@
         <option value="vod">点播接口</option>
         <option value="live">直播接口</option>
       </select>
+    </div>
+    <div id="prompt-name-row" class="prompt-type-row">
+      <label for="prompt-name">接口名称</label>
+      <input id="prompt-name" class="prompt-name-input" type="text" placeholder="给这个接口起个名字（可留空）" autocomplete="off">
     </div>
     <textarea id="prompt-text" spellcheck="false" placeholder="在这里粘贴内容…"></textarea>
     <div class="prompt-actions">

@@ -32,49 +32,120 @@ function cacheSet(key, value, ttlMs = 5 * 60 * 1000) {
 
 // 用 curl 发请求：优先直连 → 走代理，带重试。body 走 stdout，元数据走 -w 分隔符。
 const META = '\n__TVBOX_META__'; // 后面跟 http_code|content_type|final_url
+
+// 网络加速开关：由设置页控制。开启时 curl 走 Windows 系统代理（浏览器同款），关闭时走直连。
+// 默认关闭；index.js 启动时从用户数据目录的 netaccel.json 恢复。
+let networkAccel = false;
+function setNetworkAccel(on) { networkAccel = !!on; }
+function getNetworkAccel() { return networkAccel; }
+
+// 读取 Windows 系统代理（浏览器走的路线）。
+// 环境变量 HTTP(S)_PROXY 常指向已关闭的旧代理，导致 curl 超时而浏览器正常。
+// 返回 "host:port" 裸地址（不带协议），由 curlFetchRaw 分别尝试 socks5/http 两种协议。
+let _sysProxyCache, _sysProxyAt = 0;
+function windowsSystemProxy() {
+  if (process.platform !== 'win32') return '';
+  if (_sysProxyCache !== undefined && Date.now() - _sysProxyAt < 60000) return _sysProxyCache;
+  let result = '';
+  try {
+    const { execFileSync } = require('node:child_process');
+    const key = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings';
+    // ProxyEnable=0 时注册表可能残留 ProxyServer，此时不应使用
+    try {
+      const en = execFileSync('reg', ['query', key, '/v', 'ProxyEnable'], { encoding: 'utf8', windowsHide: true, timeout: 3000 });
+      if (/ProxyEnable\s+REG_DWORD\s+0x0\b/i.test(en)) { _sysProxyCache = ''; _sysProxyAt = Date.now(); return ''; }
+    } catch (_) {}
+    const out = execFileSync('reg', ['query', key, '/v', 'ProxyServer'], { encoding: 'utf8', windowsHide: true, timeout: 3000 });
+    const m = out.match(/ProxyServer\s+REG_SZ\s+(.+)/i);
+    if (m) {
+      const raw = m[1].trim();
+      // 形如 "http=127.0.0.1:10808;https=127.0.0.1:10808;socks=127.0.0.1:10808" 或裸 "127.0.0.1:10808"
+      // socks 优先（多数本地代理软件 socks 口才真正能出网），其次 http。
+      const socks = raw.match(/(?:^|;)socks5?=([^;]+)/i);
+      const http = raw.match(/(?:^|;)https?=([^;]+)/i);
+      const pick = (socks && socks[1]) || (http && http[1]) || (!raw.includes('=') ? raw : '');
+      result = String(pick || '').trim().replace(/^https?:\/\//i, '').replace(/^socks5?:\/\//i, '').replace(/\/+$/, '');
+    }
+  } catch (_) {}
+  _sysProxyCache = result; _sysProxyAt = Date.now();
+  return result;
+}
+
 async function curlFetchRaw(url, args, perTimeout) {
+  // 加速模式单条超时 14s：略小于前端 15s 等待窗口，失败时也能回传明确错误而非 "user aborted"。
+  // --ipv4：不少域名 AAAA 记录被污染到不可达 IPv6（如 Facebook 段），强制 IPv4。
+  const effTimeout = networkAccel ? 14000 : perTimeout;
+  const metaBuf = Buffer.from(META, 'latin1');
   const full = [
-    '-sS', '-L', '--compressed', '--max-time', String(Math.ceil(perTimeout / 1000)),
+    '-sS', '-L', '--compressed', '--ipv4', '--max-time', String(Math.ceil(effTimeout / 1000)),
     '-A', args.ua || DEFAULT_UA,
     ...(args.headers || []),
     '-w', META + '%{http_code}|%{content_type}|%{url_effective}',
   ];
-  const attempts = [
-    ['--noproxy', '*', ...full, url],
-    [...full, url],
-    ['--noproxy', '*', ...full, url],
-  ];
-  let lastErr;
-  for (const att of attempts) {
-    try {
-      const buf = await new Promise((resolve, reject) => {
-        let child;
-        try { child = spawn('curl', att, { windowsHide: true }); }
-        catch (e) { return reject(e); }
-        const chunks = [], errs = [];
-        child.stdout.on('data', c => chunks.push(c));
-        child.stderr.on('data', c => errs.push(c));
-        child.on('error', reject);
-        const timer = setTimeout(() => { try { child.kill(); } catch {} reject(new Error('curl timeout')); }, perTimeout + 2500);
-        child.on('close', code => {
-          clearTimeout(timer);
-          if (code !== 0) return reject(new Error('curl ' + code + ': ' + Buffer.concat(errs).toString('utf8').slice(0, 140)));
-          resolve(Buffer.concat(chunks));
-        });
-      });
-      const metaBuf = Buffer.from(META, 'latin1');
-      const mi = buf.lastIndexOf(metaBuf);
-      if (mi < 0) throw new Error('curl meta missing');
-      const body = buf.subarray(0, mi);
-      const meta = buf.subarray(mi + metaBuf.length).toString('utf8').trim();
-      const [codeStr, ctype = '', finalUrl = url] = meta.split('|');
-      const status = parseInt(codeStr, 10) || 0;
-      // 空 body 视为失败（代理有时只回 CONNECT 头就 code 0）
-      if (status >= 200 && status < 300 && body.length === 0) throw new Error('empty body');
-      return { status, ctype, finalUrl, body };
-    } catch (e) { lastErr = e; }
+  // 选路：加速开 → 系统代理 socks5 双路 + http + 环境变量代理 + 直连，全部【并发竞速】，谁先拿到有效数据用谁；
+  //       加速关 → 只走直连，完全不碰代理（curl 默认会读环境变量，故显式 --noproxy）。
+  // 之所以并发：实测 socks5 代理成功率仅约 40%、慢则 13s+，串行会被慢路线吃光前端窗口导致 abort。
+  const sysProxy = networkAccel ? windowsSystemProxy() : '';
+  const attempts = [];
+  if (networkAccel) {
+    if (sysProxy) {
+      // socks5 走本地 DNS 解析，可绕开代理远端 DNS 故障；双路并发对抗抖动
+      attempts.push(['--proxy', 'socks5://' + sysProxy, ...full, url]);
+      attempts.push(['--proxy', 'socks5://' + sysProxy, ...full, url]);
+      attempts.push(['--proxy', 'http://' + sysProxy, ...full, url]);
+    }
+    attempts.push([...full, url]);                     // 环境变量代理（加速软件有时只注入此项）
   }
-  throw lastErr || new Error('curl failed');
+  attempts.push(['--noproxy', '*', ...full, url]);     // 直连（关闭时唯一路线；开启时最后兜底）
+
+  return await new Promise((resolve, reject) => {
+    const children = [];
+    let settled = false, remaining = attempts.length, lastErr;
+    const succeed = r => {
+      if (settled) return;
+      settled = true;
+      for (const c of children) { try { c.kill(); } catch {} }
+      resolve(r);
+    };
+    const fail = e => {
+      if (settled) return;
+      lastErr = e;
+      if (--remaining <= 0) { settled = true; reject(e); }
+    };
+    attempts.forEach(att => {
+      let child;
+      try { child = spawn('curl', att, { windowsHide: true }); }
+      catch (e) { fail(e); return; }
+      children.push(child);
+      const chunks = [], errs = [];
+      child.stdout.on('data', c => chunks.push(c));
+      child.stderr.on('data', c => errs.push(c));
+      let finished = false;
+      const timer = setTimeout(() => {
+        try { child.kill(); } catch {}
+        if (!finished) { finished = true; fail(new Error('curl timeout')); }
+      }, effTimeout + 1500);
+      child.on('error', e => { if (finished) return; finished = true; fail(e); });
+      child.on('close', code => {
+        clearTimeout(timer);
+        if (finished || settled) return;
+        finished = true;
+        if (code !== 0) return fail(new Error('curl ' + code + ': ' + Buffer.concat(errs).toString('utf8').slice(0, 140)));
+        const buf = Buffer.concat(chunks);
+        const mi = buf.lastIndexOf(metaBuf);
+        if (mi < 0) return fail(new Error('curl meta missing'));
+        const body = buf.subarray(0, mi);
+        const meta = buf.subarray(mi + metaBuf.length).toString('utf8').trim();
+        const [codeStr, ctype = '', finalUrl = url] = meta.split('|');
+        const status = parseInt(codeStr, 10) || 0;
+        // 空 body / 非 2xx 视为失败（代理有时只回 CONNECT 头就 code 0，或回 502 错误页）
+        if (!(status >= 200 && status < 300) || body.length === 0) {
+          return fail(new Error('HTTP ' + status + (body.length === 0 ? ' (empty)' : '')));
+        }
+        succeed({ status, ctype, finalUrl, body });
+      });
+    });
+  });
 }
 
 async function httpGet(url, opts = {}) {
@@ -83,7 +154,8 @@ async function httpGet(url, opts = {}) {
   if (cacheMs > 0) { const hit = cacheGet(ck); if (hit) return hit; }
   const headerArgs = Object.entries(headers).map(([k, v]) => '-H ' + k + ': ' + v).length
     ? Object.entries(headers).flatMap(([k, v]) => ['-H', k + ': ' + v]) : [];
-  const r = await curlFetchRaw(url, { ua, headers: headerArgs }, Math.min(timeout, 12000));
+  // 单轮超时适度缩短：代理不通时快速轮换到下一条路线，避免前端等待窗口内拿不到结果
+  const r = await curlFetchRaw(url, { ua, headers: headerArgs }, Math.min(timeout, 8000));
   const result = {
     ok: r.status >= 200 && r.status < 300, status: r.status, url: r.finalUrl,
     text: r.body.toString('utf8'), buf: r.body,
@@ -185,5 +257,5 @@ function cacheClear() {
 
 module.exports = {
   DEFAULT_UA, httpGet, absoluteUrl, isHttpUrl, parseSimpleXml, decodeXml,
-  rewriteM3U8, cacheGet, cacheSet, cacheClear,
+  rewriteM3U8, cacheGet, cacheSet, cacheClear, setNetworkAccel, getNetworkAccel,
 };

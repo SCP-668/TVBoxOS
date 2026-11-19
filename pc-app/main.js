@@ -1,21 +1,11 @@
 'use strict';
-const { app, BrowserWindow, Menu, session } = require('electron');
+const { app, BrowserWindow, Menu, session, dialog, shell, ipcMain } = require('electron');
 const { spawn } = require('node:child_process');
 const net = require('node:net');
 const path = require('node:path');
 const fs = require('node:fs');
 
 const PORT = 32124;
-const TITLEBAR_CSS = `
-  html { padding-top: 40px !important; box-sizing: border-box; }
-  body { -webkit-user-select: none; }
-  input, textarea { -webkit-user-select: text; }
-  #topbar { height: 40px !important; padding-top: 0 !important; }
-  #ltv-drag-strip {
-    position: fixed !important; top: 0; left: 0; right: 150px; height: 40px;
-    z-index: 2147483647; -webkit-app-region: drag;
-  }
-`;
 
 const LOG = path.join(app.getPath('userData'), 'tvbox-pc.log');
 function log(m) { try { fs.appendFileSync(LOG, `[${new Date().toISOString()}] ${m}\n`); } catch (_) {} }
@@ -28,6 +18,39 @@ const UI_DIR = app.isPackaged
   : path.join(__dirname, 'ui');
 
 let serverProc = null, mainWindow = null;
+
+// 下载相关：原生文件夹选择 / 资源管理器定位 / 系统默认程序打开
+ipcMain.handle('tvbox:pickFolder', async () => {
+  try {
+    const r = await dialog.showOpenDialog(mainWindow || BrowserWindow.getFocusedWindow(), {
+      title: '选择下载文件夹',
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    return r.canceled ? '' : (r.filePaths[0] || '');
+  } catch (_) { return ''; }
+});
+ipcMain.handle('tvbox:showItem', async (_e, p) => {
+  if (!p) return false;
+  try { await shell.showItemInFolder(p); return true; } catch (_) { return false; }
+});
+ipcMain.handle('tvbox:openItem', async (_e, p) => {
+  if (!p) return '路径为空';
+  try { return (await shell.openPath(p)) || ''; } catch (e) { return e.message || String(e); }
+});
+
+// 窗口控制：自绘标题栏（无边框窗口）用，只暴露三个受控动作
+ipcMain.handle('tvbox:winAction', (_e, action) => {
+  const w = mainWindow;
+  if (!w) return false;
+  switch (action) {
+    case 'min': w.minimize(); break;
+    case 'max': w.isMaximized() ? w.restore() : w.maximize(); break;
+    case 'close': w.close(); break;
+    default: return false;
+  }
+  return true;
+});
+ipcMain.handle('tvbox:isMaximized', () => !!(mainWindow && mainWindow.isMaximized()));
 
 function isPortOpen(port) {
   return new Promise(res => {
@@ -68,20 +91,21 @@ async function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1360, height: 860, minWidth: 1000, minHeight: 640, show: false,
     icon: path.join(__dirname, 'icon.ico'),
-    titleBarStyle: 'hidden',
-    titleBarOverlay: { color: '#0b101a', symbolColor: '#e6f2ff', height: 40 },
-    webPreferences: { nodeIntegration: false, contextIsolation: true, webSecurity: true },
+    // 无边框透明窗口：由页面自己绘制圆角外壳与标题栏（logo + 窗口控制按钮）
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    resizable: true,
+    webPreferences: {
+      nodeIntegration: false, contextIsolation: true, webSecurity: true,
+      preload: path.join(__dirname, 'preload.js'),
+    },
   });
   const ok = await waitServer();
   if (!ok) { mainWindow.loadFile(path.join(UI_DIR, 'error.html')).catch(() => {}); mainWindow.show(); return; }
-  const inject = () => {
-    mainWindow.webContents.insertCSS(TITLEBAR_CSS).catch(() => {});
-    mainWindow.webContents.executeJavaScript(`
-      (function(){ if(document.getElementById('ltv-drag-strip'))return;
-        var d=document.createElement('div'); d.id='ltv-drag-strip'; document.body.appendChild(d); })();
-    `).catch(() => {});
-  };
-  mainWindow.webContents.on('did-finish-load', inject);
+  const notifyMax = max => mainWindow && mainWindow.webContents.send('tvbox:winState', !!max);
+  mainWindow.on('maximize', () => notifyMax(true));
+  mainWindow.on('unmaximize', () => notifyMax(false));
   mainWindow.loadURL(`http://127.0.0.1:${PORT}/`);
   mainWindow.once('ready-to-show', () => mainWindow.show());
   mainWindow.on('closed', () => { mainWindow = null; });
