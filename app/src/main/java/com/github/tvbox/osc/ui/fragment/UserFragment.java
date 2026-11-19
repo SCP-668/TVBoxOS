@@ -92,6 +92,16 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
     @Override
     protected void onFragmentResume() {
         super.onFragmentResume();
+        if (isPortrait()) {
+            // 竖屏：首页推荐改成 2 列大卡片网格，配合 layout-port/fragment_user.xml
+            // 让海报区铺满剩余屏幕，方便手机竖屏浏览（横屏逻辑完全不动）
+            tvHotList.setVisibility(View.VISIBLE);
+            tvHotList.setHasFixedSize(true);
+            tvHotList.setLayoutManager(new V7GridLayoutManager(this.mContext, 2));
+            int pad = -tvHotList.mHorizontalSpacingWithMargins / 2 + getResources().getDimensionPixelSize(R.dimen.vs_6);
+            tvHotList.setPadding(pad, 0, pad, 0);
+            return;
+        }
         if (Hawk.get(HawkConfig.HOME_REC_STYLE, false)) {
             tvHotList.setVisibility(View.VISIBLE);
             tvHotList.setHasFixedSize(true);

@@ -313,5 +313,12 @@ public abstract class BaseLazyFragment extends Fragment implements CustomAdapt {
         return isBaseOnWidth() ? 5 : 6;
     }
 
+    /** 当前是否竖屏，委托给 Activity 的 isPortrait()（内部用 super.getResources()，无递归风险） */
+    public boolean isPortrait() {
+        if (getActivity() instanceof com.github.tvbox.osc.base.BaseActivity)
+            return ((com.github.tvbox.osc.base.BaseActivity) getActivity()).isPortrait();
+        return false;
+    }
+
 
 }

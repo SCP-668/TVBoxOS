@@ -3,4 +3,11 @@
     <!-- 竖屏专用：海报卡片放大（配合 gridSpanCount 竖屏 3 列），横屏走 values/dimens.xml 不受影响 -->
     <dimen name="vs_214">330mm</dimen>
     <dimen name="vs_280">432mm</dimen>
+    <!-- 竖屏首页推荐2列大卡片 -->
+    <dimen name="vs_560">560mm</dimen>
+    <dimen name="vs_730">730mm</dimen>
+    <!-- 竖屏重排布局补充尺寸 -->
+    <dimen name="vs_16">16mm</dimen>
+    <dimen name="vs_44">44mm</dimen>
+    <dimen name="vs_78">78mm</dimen>
 </resources>
