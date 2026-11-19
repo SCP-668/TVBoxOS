@@ -302,15 +302,16 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
 
     @Override
     public boolean isBaseOnWidth() {
-        // 竖屏：按高度适配（mm 尺寸以 720 为基准缩放，竖屏布局比例正确）
-        // 横屏：保持原逻辑（超宽屏按高度，普通按宽度）
-        if (isPortrait()) return false;
+        // 设计基准 1280×720 是横屏尺寸。竖屏必须同样按"宽度"适配：
+        // 若竖屏按高度 720 基准，density 会被放大数倍，布局设计宽度 1280dp
+        // 换算后远超屏幕实际宽度，导致所有控件横向溢出被裁切（竖屏错乱的根因）。
+        // 竖屏 screenRatio≈2（<4），原判断天然返回 true（按宽度），符合预期。
+        // 超宽屏（ratio>=4）仍按高度，保持原逻辑。
         return !(screenRatio >= 4.0f);
     }
 
-    /** 网格列数：竖屏窄屏用 2 列，横屏沿用原 5/6 列 */
+    /** 网格列数：沿用原 5/6 列。按宽度适配后竖屏横向正好铺满，无需减少列数 */
     public int gridSpanCount() {
-        if (isPortrait()) return 2;
         return isBaseOnWidth() ? 5 : 6;
     }
 
