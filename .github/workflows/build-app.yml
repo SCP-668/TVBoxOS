@@ -57,12 +57,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # 只构建 java/java32/java64 三个 flavor：
-      # 它们不依赖 :pyramid，避开 Chaquopy 写死的 D:/Programs/Python 路径。
+      # 只构建 java64 一个 flavor：安装包只交付 64 位，缩短构建时间
       - name: Build Release APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleJavaRelease assembleJava32Release assembleJava64Release \
+          ./gradlew assembleJava64Release \
             --build-cache --parallel --warning-mode all --no-daemon
 
       - name: Prepare APKs

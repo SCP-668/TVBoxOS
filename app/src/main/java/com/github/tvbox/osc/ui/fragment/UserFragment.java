@@ -3,10 +3,13 @@ package com.github.tvbox.osc.ui.fragment;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.BounceInterpolator;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -93,68 +96,118 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
     @Override
     protected void onFragmentResume() {
         super.onFragmentResume();
-        if (isPortrait()) {
-            // 竖屏：首页推荐改成 2 列大卡片网格，配合 layout-port/fragment_user.xml
-            // 卡片宽度 match_parent 填满网格列；间距由 TvRecyclerView 的 tv_horizontalSpacingWithMargins/
-            // tv_verticalSpacingWithMargins 统一提供，左右用相同的负 margin 抵消，保证两侧对称。
-            tvHotList.setVisibility(View.VISIBLE);
-            tvHotList.setHasFixedSize(true);
-            tvHotList.setLayoutManager(new V7GridLayoutManager(this.mContext, 2));
-            int pad = -tvHotList.mHorizontalSpacingWithMargins / 2
-                    + getResources().getDimensionPixelSize(R.dimen.vs_20);
-            tvHotList.setPadding(pad, 0, pad, 0);
-            return;
-        }
-        // 一套响应式布局：横屏也让列表填满剩余空间（0dp + weight=1），
-        // 之前写死 vs_280 会与 item 高度错配，导致列表既显示不全又滚不动。
-        // 同时把快捷入口行压矮：横屏只有 1080 高，入口占 270px 会把列表挤到不足一行。
+        applyResponsiveLayout();
+    }
+
+    /**
+     * 首页内容区的响应式重排：横竖屏、任意窗口尺寸都用这一套算。
+     * 入口行高度、图标/字号、推荐列表的排列方式（横屏一行横滑 / 竖屏两列网格）
+     * 与卡片尺寸全部按当前屏幕像素推导，旋转后由 Activity 再次调用即可生效。
+     */
+    public void applyResponsiveLayout() {
+        if (getView() == null || tvHotList == null || homeHotVodAdapter == null) return;
+        boolean portrait = isPortrait();
+        int screenW = getResources().getDisplayMetrics().widthPixels;
         int screenH = getResources().getDisplayMetrics().heightPixels;
-        View entryRow = getView() == null ? null : getView().findViewById(R.id.entryRow);
+        int shortSide = Math.min(screenW, screenH);
+        if (shortSide <= 0) return;
+
+        // 底部 Tab 已统一提供 首页/分类/收藏/历史/设置，"我的"页不再重复这三个入口
+        if (tvHistory != null) tvHistory.setVisibility(View.GONE);
+        if (tvCollect != null) tvCollect.setVisibility(View.GONE);
+        if (tvSetting != null) tvSetting.setVisibility(View.GONE);
+        if (tvTransfer != null) {
+            tvTransfer.setVisibility(!portrait && ScreenUtils.isTv(mContext) ? View.VISIBLE : View.GONE);
+        }
+
+        // 内容区左右留白
+        int padH = Math.round(shortSide * 0.030f);
+        getView().setPadding(padH, getView().getPaddingTop(), padH, getView().getPaddingBottom());
+
+        // 入口卡片：高度按短边推导，保证"图标 + 文字"完整放下（之前写死屏高比例把文字裁掉了）
+        View entryRow = getView().findViewById(R.id.entryRow);
         if (entryRow != null) {
+            int rowH = Math.round(shortSide * (portrait ? 0.175f : 0.150f));
             ViewGroup.LayoutParams elp = entryRow.getLayoutParams();
-            if (elp != null) {
-                elp.height = (int) (screenH * 0.09f);
-                entryRow.setLayoutParams(elp);
+            elp.height = rowH;
+            entryRow.setLayoutParams(elp);
+            int iconSize = Math.round(rowH * 0.46f);
+            int labelSize = Math.round(shortSide * 0.020f);
+            int gap = Math.round(shortSide * 0.010f);
+            LinearLayout[] cards = {tvLive, tvSearch, tvPush, tvTransfer, tvHistory, tvCollect, tvSetting};
+            for (LinearLayout card : cards) {
+                if (card == null) continue;
+                ViewGroup.MarginLayoutParams clp = (ViewGroup.MarginLayoutParams) card.getLayoutParams();
+                clp.setMargins(gap, gap, gap, gap);
+                card.setLayoutParams(clp);
+                if (!(card instanceof ViewGroup)) continue;
+                ImageView icon = null;
+                TextView label = null;
+                for (int i = 0; i < card.getChildCount(); i++) {
+                    View c = card.getChildAt(i);
+                    if (c instanceof ImageView) icon = (ImageView) c;
+                    else if (c instanceof TextView) label = (TextView) c;
+                }
+                if (icon != null) {
+                    ViewGroup.LayoutParams ilp = icon.getLayoutParams();
+                    ilp.width = iconSize;
+                    ilp.height = iconSize;
+                    icon.setLayoutParams(ilp);
+                }
+                if (label != null) {
+                    label.setTextSize(TypedValue.COMPLEX_UNIT_PX, labelSize);
+                    ViewGroup.MarginLayoutParams llp = (ViewGroup.MarginLayoutParams) label.getLayoutParams();
+                    llp.topMargin = Math.round(shortSide * 0.008f);
+                    label.setLayoutParams(llp);
+                }
             }
         }
-        // 横屏同时收紧"为你推荐"标题的上下留白，把空间让给列表
-        View recTitle = getView() == null ? null : getView().findViewById(R.id.recTitle);
-        if (recTitle != null && recTitle.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+
+        // "为你推荐"标题
+        View recTitle = getView().findViewById(R.id.recTitle);
+        if (recTitle != null) {
+            ((TextView) recTitle).setTextSize(TypedValue.COMPLEX_UNIT_PX, Math.round(shortSide * 0.024f));
             ViewGroup.MarginLayoutParams rlp = (ViewGroup.MarginLayoutParams) recTitle.getLayoutParams();
-            rlp.topMargin = (int) (screenH * 0.01f);
-            rlp.bottomMargin = (int) (screenH * 0.006f);
+            rlp.topMargin = Math.round(shortSide * 0.014f);
+            rlp.bottomMargin = Math.round(shortSide * 0.012f);
             recTitle.setLayoutParams(rlp);
         }
-        ViewGroup.LayoutParams hotLp = tvHotList.getLayoutParams();
-        if (hotLp != null) {
-            hotLp.height = 0;
-            if (hotLp instanceof LinearLayout.LayoutParams) {
-                ((LinearLayout.LayoutParams) hotLp).weight = 1f;
-            }
-            tvHotList.setLayoutParams(hotLp);
-        }
+
+        tvHotList.setVisibility(View.VISIBLE);
+        tvHotList.setHasFixedSize(true);
         tvHotList.setClipChildren(false);
         tvHotList.setClipToPadding(false);
-        if (Hawk.get(HawkConfig.HOME_REC_STYLE, false)) {
-            tvHotList.setVisibility(View.VISIBLE);
-            tvHotList.setHasFixedSize(true);
-            int spanCount = 5;
-            if(style!=null && Hawk.get(HawkConfig.HOME_REC, HawkConfig.DEFAULT_HOME_REC) == 1)spanCount=ImgUtil.spanCountByStyle(style,spanCount);
-            tvHotList.setLayoutManager(new V7GridLayoutManager(this.mContext, spanCount));
-            int paddingLeft = -tvHotList.mHorizontalSpacingWithMargins / 2 + getResources().getDimensionPixelSize(R.dimen.vs_6);
-            int paddingTop = getResources().getDimensionPixelSize(R.dimen.vs_20);
-            int paddingRight = -tvHotList.mHorizontalSpacingWithMargins / 2 + getResources().getDimensionPixelSize(R.dimen.vs_6);
-            int paddingBottom = getResources().getDimensionPixelSize(R.dimen.vs_20);
-            tvHotList.setPadding(paddingLeft, paddingTop, paddingRight, paddingBottom);
+        int gap = Math.round(shortSide * 0.018f);
+        tvHotList.setSpacingWithMargins(gap, gap);
+
+        if (portrait) {
+            // 竖屏：两列竖滑网格，把整屏高度用起来
+            tvHotList.setLayoutManager(new V7GridLayoutManager(mContext, 2));
+            int itemW = Math.max(1, (screenW - padH * 2 - gap) / 2);
+            int itemH = Math.round(itemW * 1.42f);
+            homeHotVodAdapter.setMetrics(true, itemW, itemH, shortSide);
         } else {
-            tvHotList.setVisibility(View.VISIBLE);
-            tvHotList.setLayoutManager(new V7LinearLayoutManager(this.mContext, V7LinearLayoutManager.HORIZONTAL, false));
-            int paddingLeft = -tvHotList.mHorizontalSpacingWithMargins / 2 + getResources().getDimensionPixelSize(R.dimen.vs_6);
-            int paddingTop = getResources().getDimensionPixelSize(R.dimen.vs_20);
-            int paddingRight = -tvHotList.mHorizontalSpacingWithMargins / 2 + getResources().getDimensionPixelSize(R.dimen.vs_6);
-            int paddingBottom = getResources().getDimensionPixelSize(R.dimen.vs_20);
-            tvHotList.setPadding(paddingLeft, paddingTop, paddingRight, paddingBottom);
+            // 横屏：一行横滑，卡片高度吃满列表高度
+            tvHotList.setLayoutManager(new V7LinearLayoutManager(mContext, V7LinearLayoutManager.HORIZONTAL, false));
+            int itemH = Math.max(Math.round(shortSide * 0.24f), tvHotList.getHeight() - gap);
+            int itemW = Math.round(itemH * 0.70f);
+            homeHotVodAdapter.setMetrics(false, itemW, itemH, shortSide);
         }
+        homeHotVodAdapter.notifyDataSetChanged();
+
+        // 布局完成后按真实可用高度再校正一次（首次进入时 getHeight() 还是 0）
+        tvHotList.post(() -> {
+            if (getView() == null || tvHotList.getHeight() <= 0) return;
+            if (isPortrait()) {
+                int itemW = Math.max(1, (tvHotList.getWidth() - gap) / 2);
+                homeHotVodAdapter.setMetrics(true, itemW, Math.round(itemW * 1.42f), shortSide);
+            } else {
+                int itemH = Math.max(1, tvHotList.getHeight() - gap);
+                homeHotVodAdapter.setMetrics(false, Math.round(itemH * 0.70f), itemH, shortSide);
+            }
+            homeHotVodAdapter.notifyDataSetChanged();
+        });
+
         if (Hawk.get(HawkConfig.HOME_REC, HawkConfig.DEFAULT_HOME_REC) == 2) {
             List<VodInfo> allVodRecord = RoomDataManger.getAllVodRecord(20);
             List<Movie.Video> vodList = new ArrayList<>();

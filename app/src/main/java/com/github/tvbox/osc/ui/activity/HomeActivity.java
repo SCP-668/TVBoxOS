@@ -19,6 +19,7 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.BounceInterpolator;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -318,6 +319,12 @@ public class HomeActivity extends BaseActivity {
      * 竖屏全局底部 Tab：复用现有 Activity 跳转，功能不变。
      * 首页=回到推荐页；分类=聚焦顶部分类栏；收藏/历史/设置=跳转对应页面。
      */
+    private View tabBar;
+    private int heroHeightPx = 0;
+    private final View[] tabItems = new View[5];
+    private final ImageView[] tabIcons = new ImageView[5];
+    private final TextView[] tabLabels = new TextView[5];
+
     private void initBottomTabs() {
         View tabHome = findViewById(R.id.pwTabHome);
         View tabVod = findViewById(R.id.pwTabVod);
@@ -327,10 +334,22 @@ public class HomeActivity extends BaseActivity {
         if (tabHome == null || tabVod == null || tabCollect == null || tabHistory == null || tabSetting == null) {
             return;
         }
-        // 一套响应式布局：底部 Tab 横竖屏都常显（用户明确要底部导航），
-        // 仅按方向调整 Hero 高度与内容区层叠，保证两种方向都完整可用。
-        applyResponsiveChrome();
+        tabBar = findViewById(R.id.pwTabBar);
         final View[] tabs = {tabHome, tabVod, tabCollect, tabHistory, tabSetting};
+        for (int i = 0; i < tabs.length; i++) {
+            tabItems[i] = tabs[i];
+            if (tabs[i] instanceof ViewGroup) {
+                ViewGroup g = (ViewGroup) tabs[i];
+                for (int c = 0; c < g.getChildCount(); c++) {
+                    View child = g.getChildAt(c);
+                    if (child instanceof ImageView) tabIcons[i] = (ImageView) child;
+                    else if (child instanceof TextView) tabLabels[i] = (TextView) child;
+                }
+            }
+        }
+        // 一套响应式布局：底部 Tab 横竖屏都常显（用户明确要底部导航），
+        // 尺寸全部按当前屏幕像素计算，横竖屏切换后重算即可。
+        applyResponsiveChrome();
         View.OnClickListener listener = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -364,61 +383,102 @@ public class HomeActivity extends BaseActivity {
     }
 
     private void selectTab(View[] tabs, int index) {
-        for (int i = 0; i < tabs.length; i++) tabs[i].setSelected(i == index);
+        int active = getResources().getColor(R.color.pw_tab_active);
+        int inactive = getResources().getColor(R.color.pw_tab_inactive);
+        for (int i = 0; i < tabs.length; i++) {
+            boolean on = i == index;
+            tabs[i].setSelected(on);
+            if (tabIcons[i] != null) tabIcons[i].setColorFilter(on ? active : inactive);
+            if (tabLabels[i] != null) tabLabels[i].setTextColor(on ? active : inactive);
+        }
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        // 方向切换后重新应用响应式布局（Hero 高度 / 内容区层叠 / 底部 Tab），不重建界面
+        // 一套响应式布局：方向切换后按新屏幕像素重算 Hero / Tab / 首页内容，
+        // 并让首页 Fragment 重排（网格列数、卡片尺寸都必须跟着变）
         applyResponsiveChrome();
         if (topLayout != null) topLayout.requestLayout();
         if (contentLayout != null) contentLayout.requestLayout();
+        for (BaseLazyFragment f : fragments) {
+            if (f instanceof UserFragment && f.isAdded() && f.getView() != null) {
+                ((UserFragment) f).applyResponsiveLayout();
+            }
+        }
     }
 
     /**
-     * 一套响应式布局的方向自适应：底部导航横竖屏常显；横屏压缩 Hero 高度、
-     * 取消内容区层叠负 margin，让内容区拿回足够空间（避免横屏只剩一半可视区）。
+     * 一套响应式布局的尺寸计算：横竖屏共用，全部按当前屏幕像素推导。
+     * 不再依赖 dimen(mm) 与方向分支写死的比例，避免换设备/换方向就错位。
      */
     private void applyResponsiveChrome() {
         boolean portrait = isPortrait();
+        int screenW = getResources().getDisplayMetrics().widthPixels;
         int screenH = getResources().getDisplayMetrics().heightPixels;
+        // 短边作为字号/图标基准，横竖屏观感一致
+        int shortSide = Math.min(screenW, screenH);
 
-        View tabBar = findViewById(R.id.pwTabBar);
         if (tabBar != null) {
-            // 底部导航横竖屏常显，高度按屏高比例：竖屏约 8.5%、横屏约 15%（都约 160~165px）
-            tabBar.setVisibility(View.VISIBLE);
             ViewGroup.LayoutParams tlbp = tabBar.getLayoutParams();
             if (tlbp != null) {
-                tlbp.height = (int) (screenH * (portrait ? 0.085f : 0.15f));
+                tlbp.height = Math.round(shortSide * 0.088f);
                 tabBar.setLayoutParams(tlbp);
+            }
+            int iconSize = Math.round(shortSide * 0.036f);
+            int barH = Math.round(shortSide * 0.088f);
+            int labelSize = Math.round(shortSide * 0.020f);
+            // 图标 + 文字整体垂直居中，两端留出呼吸空间
+            int iconTop = Math.round(barH * 0.16f);
+            for (int i = 0; i < tabIcons.length; i++) {
+                if (tabIcons[i] != null) {
+                    ViewGroup.LayoutParams ilp = tabIcons[i].getLayoutParams();
+                    ilp.width = iconSize;
+                    ilp.height = iconSize;
+                    if (ilp instanceof ViewGroup.MarginLayoutParams) {
+                        ((ViewGroup.MarginLayoutParams) ilp).topMargin = iconTop;
+                    }
+                    tabIcons[i].setLayoutParams(ilp);
+                }
+                if (tabLabels[i] != null) {
+                    tabLabels[i].setTextSize(TypedValue.COMPLEX_UNIT_PX, labelSize);
+                }
             }
         }
 
         if (topLayout != null) {
-            // Hero 高度按屏高比例：竖屏 22%（约 420px，露出标题+副标题），横屏 30%
             ViewGroup.LayoutParams tlp = topLayout.getLayoutParams();
+            // Hero 只放标题 + 一句话，竖屏更紧凑（把高度留给内容），横屏稍高
+            heroHeightPx = Math.round(screenH * (portrait ? 0.145f : 0.235f));
             if (tlp != null) {
-                tlp.height = (int) (screenH * (portrait ? 0.22f : 0.26f));
+                tlp.height = heroHeightPx;
                 topLayout.setLayoutParams(tlp);
             }
+            int padH = Math.round(shortSide * 0.028f);
+            topLayout.setPadding(padH, Math.round(screenH * 0.018f), padH, 0);
         }
 
+        refreshTopInfoTextSize();
+
         if (contentLayout != null) {
-            // 内容区必须裁剪子视图，否则卡片会溢出画到下方导航栏上（竖屏截图问题）
             contentLayout.setClipChildren(true);
             contentLayout.setClipToPadding(false);
-            int padTop = (int) (screenH * (portrait ? 0.03f : 0.012f));
-            int padBottom = getResources().getDimensionPixelSize(R.dimen.vs_10);
+            int padTop = Math.round(shortSide * 0.018f);
             contentLayout.setPadding(contentLayout.getPaddingLeft(), padTop,
-                    contentLayout.getPaddingRight(), padBottom);
-            // 取消层叠负 margin：之前 -110mm 把内容区整体拉到顶部，Hero 被完全盖住
+                    contentLayout.getPaddingRight(), 0);
             ViewGroup.LayoutParams lp = contentLayout.getLayoutParams();
             if (lp instanceof ConstraintLayout.LayoutParams) {
                 ConstraintLayout.LayoutParams clp = (ConstraintLayout.LayoutParams) lp;
                 clp.topMargin = 0;
                 contentLayout.setLayoutParams(clp);
             }
+        }
+        if (mGridView != null && mGridView.getLayoutParams() != null) {
+            ViewGroup.MarginLayoutParams gp = (ViewGroup.MarginLayoutParams) mGridView.getLayoutParams();
+            gp.bottomMargin = Math.round(shortSide * 0.012f);
+            mGridView.setLayoutParams(gp);
+            int padH = Math.round(shortSide * 0.030f);
+            mGridView.setPadding(padH, 0, padH, 0);
         }
     }
 
@@ -794,8 +854,24 @@ public class HomeActivity extends BaseActivity {
         if (tvName == null || tvDate == null) {
             return;
         }
-        tvName.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.ts_30));
-        tvDate.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.ts_26));
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        int screenH = getResources().getDisplayMetrics().heightPixels;
+        int shortSide = Math.min(screenW, screenH);
+        boolean portrait = isPortrait();
+        // 标题/时间/副标题全部按短边像素推导：竖屏不加粗放大，横屏也不缩到看不清
+        int nameSize = Math.round(shortSide * (portrait ? 0.030f : 0.026f));
+        int dateSize = Math.round(shortSide * 0.018f);
+        tvName.setTextSize(TypedValue.COMPLEX_UNIT_PX, nameSize);
+        tvDate.setTextSize(TypedValue.COMPLEX_UNIT_PX, dateSize);
+        View slogan = findViewById(R.id.tvSlogan);
+        if (slogan instanceof TextView) {
+            ((TextView) slogan).setTextSize(TypedValue.COMPLEX_UNIT_PX, Math.round(shortSide * 0.019f));
+            ViewGroup.MarginLayoutParams slp = (ViewGroup.MarginLayoutParams) slogan.getLayoutParams();
+            if (slp != null) {
+                slp.topMargin = Math.round(shortSide * 0.008f);
+                slogan.setLayoutParams(slp);
+            }
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -879,6 +955,10 @@ public class HomeActivity extends BaseActivity {
             @Override
             public void onAnimationEnd(Animator animation) {
                 topHide = (byte) (hide ? 1 : 0);
+                // 动画结束后把 Hero 高度还原成响应式计算值，避免用写死的 mm 值污染布局
+                ViewGroup.LayoutParams lp = topLayout.getLayoutParams();
+                lp.height = hide ? 0 : heroHeightPx;
+                topLayout.setLayoutParams(lp);
             }
 
             @Override
@@ -892,24 +972,16 @@ public class HomeActivity extends BaseActivity {
             }
         });
         if (hide && topHide == 0) {
-            animatorSet.playTogether(ObjectAnimator.ofObject(viewObj, "marginTop", new IntEvaluator(),
-                            AutoSizeUtils.mm2px(this.mContext, 10.0f),
-                            AutoSizeUtils.mm2px(this.mContext, 0.0f)),
-                    ObjectAnimator.ofObject(viewObj, "height", new IntEvaluator(),
-                            AutoSizeUtils.mm2px(this.mContext, 50.0f),
-                            AutoSizeUtils.mm2px(this.mContext, 1.0f)),
+            animatorSet.playTogether(ObjectAnimator.ofObject(viewObj, "height", new IntEvaluator(),
+                            heroHeightPx, 0),
                     ObjectAnimator.ofFloat(this.topLayout, "alpha", 1.0f, 0.0f));
             animatorSet.setDuration(200);
             animatorSet.start();
             return;
         }
         if (!hide && topHide == 1) {
-            animatorSet.playTogether(ObjectAnimator.ofObject(viewObj, "marginTop", new IntEvaluator(),
-                            AutoSizeUtils.mm2px(this.mContext, 0.0f),
-                            AutoSizeUtils.mm2px(this.mContext, 10.0f)),
-                    ObjectAnimator.ofObject(viewObj, "height", new IntEvaluator(),
-                            AutoSizeUtils.mm2px(this.mContext, 1.0f),
-                            AutoSizeUtils.mm2px(this.mContext, 50.0f)),
+            animatorSet.playTogether(ObjectAnimator.ofObject(viewObj, "height", new IntEvaluator(),
+                            0, heroHeightPx),
                     ObjectAnimator.ofFloat(this.topLayout, "alpha", 0.0f, 1.0f));
             animatorSet.setDuration(200);
             animatorSet.start();

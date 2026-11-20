@@ -1,6 +1,7 @@
 package com.github.tvbox.osc.ui.adapter;
 
 import android.text.TextUtils;
+import android.util.TypedValue;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -26,6 +27,12 @@ public class HomeHotVodAdapter extends BaseQuickAdapter<Movie.Video, BaseViewHol
     private final ImgUtil.Style style;
     private String tvRateValue;
 
+    /** 由 UserFragment.applyResponsiveLayout() 写入：卡片尺寸全部按当前屏幕像素算 */
+    private boolean portraitGrid = false;
+    private int cardW = 0;
+    private int cardH = 0;
+    private int shortSide = 0;
+
     public HomeHotVodAdapter(ImgUtil.Style style, String tvRate) {
         super(R.layout.item_user_hot_vod, new ArrayList<>());
         if (style != null) {
@@ -33,6 +40,13 @@ public class HomeHotVodAdapter extends BaseQuickAdapter<Movie.Video, BaseViewHol
         }
         this.style = style;
         this.tvRateValue = tvRate;
+    }
+
+    public void setMetrics(boolean portraitGrid, int cardW, int cardH, int shortSide) {
+        this.portraitGrid = portraitGrid;
+        this.cardW = cardW;
+        this.cardH = cardH;
+        this.shortSide = shortSide;
     }
 
     @Override
@@ -54,71 +68,56 @@ public class HomeHotVodAdapter extends BaseQuickAdapter<Movie.Video, BaseViewHol
             tvNote.setText(item.note);
             tvNote.setVisibility(View.VISIBLE);
         }
-        helper.setText(R.id.tvName, item.name);
-        ImageView ivThumb = helper.getView(R.id.ivThumb);
+        TextView tvName = helper.getView(R.id.tvName);
+        tvName.setText(item.name);
 
-        int newWidth = ImgUtil.defaultWidth;
-        int newHeight = ImgUtil.defaultHeight;
-        if (style != null) {
-            newWidth = defaultWidth;
-            newHeight = (int) (newWidth / style.ratio);
-        }
+        int textBase = shortSide > 0 ? shortSide : Math.min(
+                mContext.getResources().getDisplayMetrics().widthPixels,
+                mContext.getResources().getDisplayMetrics().heightPixels);
+        int nameSize = Math.round(textBase * 0.021f);
+        int captionSize = Math.round(textBase * 0.017f);
+        tvName.setTextSize(TypedValue.COMPLEX_UNIT_PX, nameSize);
+        tvNote.setTextSize(TypedValue.COMPLEX_UNIT_PX, captionSize);
+        tvRate.setTextSize(TypedValue.COMPLEX_UNIT_PX, captionSize);
+
+        ImageView ivThumb = helper.getView(R.id.ivThumb);
+        int loadW = cardW > 0 ? cardW : AutoSizeUtils.mm2px(mContext, ImgUtil.defaultWidth);
+        int loadH = cardH > 0 ? cardH : AutoSizeUtils.mm2px(mContext, ImgUtil.defaultHeight);
 
         String pic = item.pic == null ? "" : item.pic.trim();
         if (!TextUtils.isEmpty(pic)) {
             if (ImgUtil.isBase64Image(pic)) {
                 ivThumb.setImageBitmap(ImgUtil.decodeBase64ToBitmap(pic));
             } else {
-                ImgUtil.load(pic, ivThumb, AutoSizeUtils.mm2px(mContext, 10), AutoSizeUtils.mm2px(mContext, newWidth), AutoSizeUtils.mm2px(mContext, newHeight), item.name);
+                ImgUtil.load(pic, ivThumb, AutoSizeUtils.mm2px(mContext, 10), loadW, loadH, item.name);
             }
         } else {
             ivThumb.setImageDrawable(ImgUtil.createTextDrawable(item.name));
         }
-        applyStyleToImage(helper, ivThumb);
+        applyCardSize(helper);
     }
 
-    private void applyStyleToImage(BaseViewHolder helper, final ImageView ivThumb) {
-        // 竖屏走整列宽度的大卡片，不能用横屏固定宽度覆盖，
-        // 否则固定宽度小于列宽、item 靠左对齐会造成左右间距不一致。
-        boolean portrait = mContext.getResources().getConfiguration().orientation
-                == android.content.res.Configuration.ORIENTATION_PORTRAIT;
-        // 卡片根布局默认 match_parent：竖屏对应网格列宽（正确），
-        // 横屏对应"一行横向排列"时会被撑成整屏宽，导致一个 item 占满全部空间、列表滚不动。
+    /**
+     * 卡片尺寸：竖屏 = 两列网格的列宽；横屏 = 一行横滑，高度吃满列表、按海报比例算宽。
+     * 宽度必须固定（横滑时若 match_parent 会导致一个 item 占满整行、列表滚不动）。
+     */
+    private void applyCardSize(BaseViewHolder helper) {
+        if (cardW <= 0 || cardH <= 0) return;
         View itemView = helper.itemView;
-        if (portrait) {
-            ViewGroup.LayoutParams ilp = itemView.getLayoutParams();
-            if (ilp != null && ilp.width != ViewGroup.LayoutParams.MATCH_PARENT) {
-                ilp.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                itemView.setLayoutParams(ilp);
-            }
-            return;
-        }
-        // 横屏：统一布局后 item 是竖屏 730mm 大卡，必须改回横屏尺寸，
-        // 否则 item 高度远大于 tvHotList 容器，焦点滚动失效（style==null 的默认豆瓣源同样需要修正）。
-        ViewGroup container = (ViewGroup) ivThumb.getParent();
-        int width = (style != null) ? defaultWidth : ImgUtil.defaultWidth;
-        int height = (style != null) ? (int) (width / style.ratio) : ImgUtil.defaultHeight;
-        int wPx = AutoSizeUtils.mm2px(mContext, width);
-        int hPx = AutoSizeUtils.mm2px(mContext, height);
-        // 卡片高度不得超过屏幕高度的 26%，否则一行都放不下，列表滚不动
-        int maxH = (int) (mContext.getResources().getDisplayMetrics().heightPixels * 0.26f);
-        if (hPx > maxH) {
-            wPx = Math.max(1, (int) (wPx * (maxH / (float) hPx)));
-            hPx = maxH;
-        }
-        ViewGroup.LayoutParams containerParams = container.getLayoutParams();
-        containerParams.height = hPx;
-        containerParams.width = wPx;
-        container.setLayoutParams(containerParams);
-
-        // 关键：item 根宽必须固定成卡片宽度，不能是 match_parent，
-        // 否则横向列表里每个 item 都占满整行，看不到后续海报也滚不动。
+        View frame = itemView.findViewById(R.id.mItemFrame);
+        int pad = Math.max(1, Math.round(shortSide * 0.004f));
+        itemView.setPadding(pad, pad, pad, pad);
         ViewGroup.LayoutParams ilp = itemView.getLayoutParams();
         if (ilp != null) {
-            int pad = Math.max(1, (int) (mContext.getResources().getDisplayMetrics().density * 2));
-            ilp.width = wPx + pad * 2;
+            ilp.width = portraitGrid ? ViewGroup.LayoutParams.MATCH_PARENT : cardW;
             ilp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
             itemView.setLayoutParams(ilp);
+        }
+        if (frame != null) {
+            ViewGroup.LayoutParams flp = frame.getLayoutParams();
+            flp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+            flp.height = cardH;
+            frame.setLayoutParams(flp);
         }
     }
 }
