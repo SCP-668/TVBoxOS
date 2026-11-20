@@ -382,43 +382,42 @@ public class HomeActivity extends BaseActivity {
      */
     private void applyResponsiveChrome() {
         boolean portrait = isPortrait();
+        int screenH = getResources().getDisplayMetrics().heightPixels;
 
         View tabBar = findViewById(R.id.pwTabBar);
         if (tabBar != null) {
+            // 底部导航横竖屏常显，高度按屏高比例：竖屏约 8.5%、横屏约 15%（都约 160~165px）
             tabBar.setVisibility(View.VISIBLE);
-        }
-
-        if (contentLayout != null) {
-            // 内容区底部已约束到导航栏顶部，这里只留一点缓冲，避免最后一行贴边
-            int padBottom = getResources().getDimensionPixelSize(R.dimen.vs_10);
-            // 竖屏层叠式圆角需要较大的顶部留白；横屏无层叠，收紧顶部间距多出可视区
-            int padTop = portrait
-                    ? getResources().getDimensionPixelSize(R.dimen.pw_sheet_pad_top)
-                    : getResources().getDimensionPixelSize(R.dimen.vs_20);
-            contentLayout.setPadding(contentLayout.getPaddingLeft(), padTop,
-                    contentLayout.getPaddingRight(), padBottom);
-            // 内容区层叠负 margin 仅竖屏保留；横屏取消，避免盖住 Hero 文字并挤压可视区
-            ViewGroup.LayoutParams lp = contentLayout.getLayoutParams();
-            if (lp instanceof ConstraintLayout.LayoutParams) {
-                ConstraintLayout.LayoutParams clp = (ConstraintLayout.LayoutParams) lp;
-                clp.topMargin = portrait
-                        ? getResources().getDimensionPixelSize(R.dimen.pw_sheet_overlap)
-                        : 0;
-                contentLayout.setLayoutParams(clp);
+            ViewGroup.LayoutParams tlbp = tabBar.getLayoutParams();
+            if (tlbp != null) {
+                tlbp.height = (int) (screenH * (portrait ? 0.085f : 0.15f));
+                tabBar.setLayoutParams(tlbp);
             }
         }
 
         if (topLayout != null) {
-            // 横屏 Hero 高度按屏幕高度比例收敛，避免 380mm 固定值吃掉半屏
+            // Hero 高度按屏高比例：竖屏 22%（约 420px，露出标题+副标题），横屏 30%
             ViewGroup.LayoutParams tlp = topLayout.getLayoutParams();
             if (tlp != null) {
-                if (portrait) {
-                    tlp.height = getResources().getDimensionPixelSize(R.dimen.pw_hero_h);
-                } else {
-                    int screenH = getResources().getDisplayMetrics().heightPixels;
-                    tlp.height = (int) (screenH * 0.34f);
-                }
+                tlp.height = (int) (screenH * (portrait ? 0.22f : 0.30f));
                 topLayout.setLayoutParams(tlp);
+            }
+        }
+
+        if (contentLayout != null) {
+            // 内容区必须裁剪子视图，否则卡片会溢出画到下方导航栏上（竖屏截图问题）
+            contentLayout.setClipChildren(true);
+            contentLayout.setClipToPadding(false);
+            int padTop = (int) (screenH * (portrait ? 0.03f : 0.012f));
+            int padBottom = getResources().getDimensionPixelSize(R.dimen.vs_10);
+            contentLayout.setPadding(contentLayout.getPaddingLeft(), padTop,
+                    contentLayout.getPaddingRight(), padBottom);
+            // 取消层叠负 margin：之前 -110mm 把内容区整体拉到顶部，Hero 被完全盖住
+            ViewGroup.LayoutParams lp = contentLayout.getLayoutParams();
+            if (lp instanceof ConstraintLayout.LayoutParams) {
+                ConstraintLayout.LayoutParams clp = (ConstraintLayout.LayoutParams) lp;
+                clp.topMargin = 0;
+                contentLayout.setLayoutParams(clp);
             }
         }
     }
@@ -950,11 +949,7 @@ public class HomeActivity extends BaseActivity {
             int spanCount = (int) Math.floor(sites.size() / 20.0);
             spanCount = Math.min(spanCount, 2);
             tvRecyclerView.setLayoutManager(new V7GridLayoutManager(mSiteSwitchDialog.getContext(), spanCount + 1));
-            // 设置对话框宽度：竖屏用接近满屏的大宽度，横屏保持原有逻辑
-            ConstraintLayout cl_root = mSiteSwitchDialog.findViewById(R.id.cl_root);
-            ViewGroup.LayoutParams clp = cl_root.getLayoutParams();
-            clp.width = AutoSizeUtils.mm2px(mSiteSwitchDialog.getContext(),
-                    isPortrait() ? 1080 : 380 + 200 * spanCount);
+            // 弹窗宽高由 SelectDialog.show() 按当前屏幕方向统一计算，这里不再写死尺寸
             mSiteSwitchDialog.setTip("请选择首页数据源");
         }
         mSiteSwitchDialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<SourceBean>() {

@@ -89,9 +89,17 @@ public class HomeHotVodAdapter extends BaseQuickAdapter<Movie.Video, BaseViewHol
         ViewGroup container = (ViewGroup) ivThumb.getParent();
         int width = (style != null) ? defaultWidth : ImgUtil.defaultWidth;
         int height = (style != null) ? (int) (width / style.ratio) : ImgUtil.defaultHeight;
+        int wPx = AutoSizeUtils.mm2px(mContext, width);
+        int hPx = AutoSizeUtils.mm2px(mContext, height);
+        // 卡片高度不得超过屏幕高度的 26%，否则一行都放不下，列表滚不动
+        int maxH = (int) (mContext.getResources().getDisplayMetrics().heightPixels * 0.26f);
+        if (hPx > maxH) {
+            wPx = Math.max(1, (int) (wPx * (maxH / (float) hPx)));
+            hPx = maxH;
+        }
         ViewGroup.LayoutParams containerParams = container.getLayoutParams();
-        containerParams.height = AutoSizeUtils.mm2px(mContext, height);
-        containerParams.width = AutoSizeUtils.mm2px(mContext, width);
+        containerParams.height = hPx;
+        containerParams.width = wPx;
         container.setLayoutParams(containerParams);
     }
 }

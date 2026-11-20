@@ -105,15 +105,28 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
             tvHotList.setPadding(pad, 0, pad, 0);
             return;
         }
-        // 一套响应式布局后 tvHotList 是 0dp+weight，item 又是竖屏 730mm 大卡片。
-        // 横屏下 Hero(380mm)+入口(180mm) 会把容器压到远小于 item 高度，TV 焦点滚动失效。
-        // 横屏恢复旧版"一行海报"的容器高度，保证焦点驱动滚动正常；竖屏走上面的分支不受影响。
+        // 一套响应式布局：横屏也让列表填满剩余空间（0dp + weight=1），
+        // 之前写死 vs_280 会与 item 高度错配，导致列表既显示不全又滚不动。
+        // 同时把快捷入口行压矮：横屏只有 1080 高，入口占 270px 会把列表挤到不足一行。
+        int screenH = getResources().getDisplayMetrics().heightPixels;
+        View entryRow = getView() == null ? null : getView().findViewById(R.id.entryRow);
+        if (entryRow != null) {
+            ViewGroup.LayoutParams elp = entryRow.getLayoutParams();
+            if (elp != null) {
+                elp.height = (int) (screenH * 0.12f);
+                entryRow.setLayoutParams(elp);
+            }
+        }
         ViewGroup.LayoutParams hotLp = tvHotList.getLayoutParams();
         if (hotLp != null) {
-            hotLp.height = getResources().getDimensionPixelSize(R.dimen.vs_280);
+            hotLp.height = 0;
+            if (hotLp instanceof LinearLayout.LayoutParams) {
+                ((LinearLayout.LayoutParams) hotLp).weight = 1f;
+            }
             tvHotList.setLayoutParams(hotLp);
         }
-        tvHotList.setClipChildren(true);
+        tvHotList.setClipChildren(false);
+        tvHotList.setClipToPadding(false);
         if (Hawk.get(HawkConfig.HOME_REC_STYLE, false)) {
             tvHotList.setVisibility(View.VISIBLE);
             tvHotList.setHasFixedSize(true);

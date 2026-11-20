@@ -11,7 +11,7 @@
     <!-- 快捷入口：7 个入口共用一套布局。
          历史/收藏/设置 由 Java 按 isPortrait() 控制：竖屏隐藏（底部 Tab 已有），横屏 TV 显示（遥控器导航需要）。
          nextFocus 焦点链按视觉顺序串联，供 TV 遥控器方向键导航。 -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="@dimen/vs_180" android:orientation="horizontal">
+    <LinearLayout android:id="@+id/entryRow" android:layout_width="match_parent" android:layout_height="@dimen/vs_180" android:orientation="horizontal">
 
         <LinearLayout android:id="@+id/tvHistory" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="@dimen/vs_6" android:background="@drawable/pw_card_selector" android:gravity="center" android:orientation="vertical" android:focusable="true" android:nextFocusLeft="@id/tvSetting">
             <ImageView android:layout_width="@dimen/vs_72" android:layout_height="@dimen/vs_72" android:layout_gravity="center_horizontal" android:src="@drawable/icon_history" app:tint="@color/pw_mint" />
