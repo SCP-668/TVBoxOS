@@ -8,41 +8,31 @@
     android:paddingLeft="@dimen/pw_pad"
     android:paddingRight="@dimen/pw_pad">
 
-    <!-- 快捷入口：4 列圆角白卡，浅色风 -->
-    <LinearLayout android:layout_width="match_parent" android:layout_height="@dimen/vs_150" android:orientation="horizontal">
-        <LinearLayout android:id="@+id/tvHistory" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="@dimen/vs_5" android:background="@drawable/pw_card_selector" android:gravity="center" android:orientation="vertical" android:focusable="true" android:nextFocusLeft="@id/tvTransfer">
-            <ImageView android:layout_width="@dimen/vs_60" android:layout_height="@dimen/vs_60" android:layout_gravity="center_horizontal" android:src="@drawable/icon_history" app:tint="@color/pw_mint" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/vs_5" android:text="历史" android:textColor="@color/pw_ink" android:textSize="@dimen/pw_ts_caption" />
-        </LinearLayout>
-        <LinearLayout android:id="@+id/tvLive" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="@dimen/vs_5" android:background="@drawable/pw_card_selector" android:gravity="center" android:orientation="vertical" android:focusable="true">
-            <ImageView android:layout_width="@dimen/vs_60" android:layout_height="@dimen/vs_60" android:layout_gravity="center_horizontal" android:src="@drawable/icon_live" app:tint="@color/pw_blue" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/vs_5" android:text="直播" android:textColor="@color/pw_ink" android:textSize="@dimen/pw_ts_caption" />
-        </LinearLayout>
-        <LinearLayout android:id="@+id/tvSearch" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="@dimen/vs_5" android:background="@drawable/pw_card_selector" android:gravity="center" android:orientation="vertical" android:focusable="true">
-            <ImageView android:layout_width="@dimen/vs_60" android:layout_height="@dimen/vs_60" android:layout_gravity="center_horizontal" android:src="@drawable/icon_search" app:tint="@color/pw_coral" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/vs_5" android:text="搜索" android:textColor="@color/pw_ink" android:textSize="@dimen/pw_ts_caption" />
-        </LinearLayout>
-        <LinearLayout android:id="@+id/tvPush" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="@dimen/vs_5" android:background="@drawable/pw_card_selector" android:gravity="center" android:orientation="vertical" android:focusable="true">
-            <ImageView android:layout_width="@dimen/vs_60" android:layout_height="@dimen/vs_60" android:layout_gravity="center_horizontal" android:src="@drawable/icon_push" app:tint="@color/pw_blue_dark" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/vs_5" android:text="推送" android:textColor="@color/pw_ink" android:textSize="@dimen/pw_ts_caption" />
-        </LinearLayout>
-    </LinearLayout>
+    <!-- 快捷入口：只保留底部 Tab 没有的功能（直播/搜索/推送/传输），
+         历史/收藏/设置 与底部 Tab 重复，改为 gone（id 保留，避免 Java 绑定空指针） -->
+    <LinearLayout android:layout_width="match_parent" android:layout_height="@dimen/vs_180" android:orientation="horizontal">
 
-    <LinearLayout android:layout_width="match_parent" android:layout_height="@dimen/vs_150" android:orientation="horizontal">
-        <LinearLayout android:id="@+id/tvFavorite" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="@dimen/vs_5" android:background="@drawable/pw_card_selector" android:gravity="center" android:orientation="vertical" android:focusable="true">
-            <ImageView android:layout_width="@dimen/vs_60" android:layout_height="@dimen/vs_60" android:layout_gravity="center_horizontal" android:src="@drawable/icon_collect" app:tint="@color/pw_coral" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/vs_5" android:text="收藏" android:textColor="@color/pw_ink" android:textSize="@dimen/pw_ts_caption" />
+        <LinearLayout android:id="@+id/tvLive" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="@dimen/vs_6" android:background="@drawable/pw_card_selector" android:gravity="center" android:orientation="vertical" android:focusable="true">
+            <ImageView android:layout_width="@dimen/vs_72" android:layout_height="@dimen/vs_72" android:layout_gravity="center_horizontal" android:src="@drawable/icon_live" app:tint="@color/pw_blue" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/vs_8" android:text="直播" android:textColor="@color/pw_ink" android:textSize="@dimen/pw_ts_body" />
         </LinearLayout>
-        <LinearLayout android:id="@+id/tvSetting" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="@dimen/vs_5" android:background="@drawable/pw_card_selector" android:gravity="center" android:orientation="vertical" android:focusable="true" android:nextFocusRight="@id/tvTransfer">
-            <ImageView android:layout_width="@dimen/vs_60" android:layout_height="@dimen/vs_60" android:layout_gravity="center_horizontal" android:src="@drawable/icon_setting" app:tint="@color/pw_ink2" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/vs_5" android:text="设置" android:textColor="@color/pw_ink" android:textSize="@dimen/pw_ts_caption" />
+        <LinearLayout android:id="@+id/tvSearch" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="@dimen/vs_6" android:background="@drawable/pw_card_selector" android:gravity="center" android:orientation="vertical" android:focusable="true">
+            <ImageView android:layout_width="@dimen/vs_72" android:layout_height="@dimen/vs_72" android:layout_gravity="center_horizontal" android:src="@drawable/icon_search" app:tint="@color/pw_coral" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/vs_8" android:text="搜索" android:textColor="@color/pw_ink" android:textSize="@dimen/pw_ts_body" />
         </LinearLayout>
-        <LinearLayout android:id="@+id/tvTransfer" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="@dimen/vs_5" android:background="@drawable/pw_card_selector" android:gravity="center" android:orientation="vertical" android:focusable="true" android:nextFocusLeft="@id/tvSetting" android:nextFocusRight="@id/tvHistory">
-            <ImageView android:layout_width="@dimen/vs_60" android:layout_height="@dimen/vs_60" android:layout_gravity="center_horizontal" android:src="@drawable/icon_transfer" app:tint="@color/pw_mint_dark" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/vs_5" android:text="传输" android:textColor="@color/pw_ink" android:textSize="@dimen/pw_ts_caption" />
+        <LinearLayout android:id="@+id/tvPush" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="@dimen/vs_6" android:background="@drawable/pw_card_selector" android:gravity="center" android:orientation="vertical" android:focusable="true">
+            <ImageView android:layout_width="@dimen/vs_72" android:layout_height="@dimen/vs_72" android:layout_gravity="center_horizontal" android:src="@drawable/icon_push" app:tint="@color/pw_blue_dark" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/vs_8" android:text="推送" android:textColor="@color/pw_ink" android:textSize="@dimen/pw_ts_body" />
         </LinearLayout>
-        <!-- 占位保持 4 列对齐 -->
-        <View android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="@dimen/vs_5" />
+        <LinearLayout android:id="@+id/tvTransfer" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:layout_margin="@dimen/vs_6" android:background="@drawable/pw_card_selector" android:gravity="center" android:orientation="vertical" android:focusable="true">
+            <ImageView android:layout_width="@dimen/vs_72" android:layout_height="@dimen/vs_72" android:layout_gravity="center_horizontal" android:src="@drawable/icon_transfer" app:tint="@color/pw_mint_dark" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="@dimen/vs_8" android:text="传输" android:textColor="@color/pw_ink" android:textSize="@dimen/pw_ts_body" />
+        </LinearLayout>
+
+        <!-- 与底部 Tab 重复的入口：隐藏但保留 id，功能从底部 Tab 进入 -->
+        <LinearLayout android:id="@+id/tvHistory" android:layout_width="@dimen/vs_0" android:layout_height="@dimen/vs_0" android:visibility="gone" />
+        <LinearLayout android:id="@+id/tvFavorite" android:layout_width="@dimen/vs_0" android:layout_height="@dimen/vs_0" android:visibility="gone" />
+        <LinearLayout android:id="@+id/tvSetting" android:layout_width="@dimen/vs_0" android:layout_height="@dimen/vs_0" android:visibility="gone" />
     </LinearLayout>
 
     <!-- 为你推荐 标题 -->

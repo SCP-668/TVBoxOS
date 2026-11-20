@@ -10,10 +10,19 @@
     <dimen name="vs_16">16mm</dimen>
     <dimen name="vs_44">44mm</dimen>
     <dimen name="vs_78">78mm</dimen>
+    <dimen name="vs_72">72mm</dimen>
     <!-- 竖屏弹窗放大专用 -->
     <dimen name="ts_32">32mm</dimen>
     <dimen name="vs_900">900mm</dimen>
     <dimen name="vs_1080">1080mm</dimen>
+    <!-- 弹窗面板宽度：横屏 dialog 用 vs_480(480mm) 偏窄，竖屏覆盖为接近满屏 -->
+    <dimen name="vs_480">1000mm</dimen>
+    <!-- 首页 Hero 标题字号：HomeActivity.refreshTopInfoTextSize 会强制用这两个值，
+         横屏基准偏小，竖屏覆盖放大，解决"字太小" -->
+    <dimen name="ts_30">44mm</dimen>
+    <dimen name="ts_26">34mm</dimen>
+    <!-- 弹窗标题字号（dialog_select 竖屏已在布局用 ts_40，这里放大通用确认类弹窗标题） -->
+    <dimen name="ts_40">46mm</dimen>
 
     <!-- ===== 清漾设计系统 token（竖屏） ===== -->
     <!-- 圆角 -->
@@ -33,7 +42,8 @@
     <dimen name="pw_ts_sub">26mm</dimen>
     <dimen name="pw_ts_caption">22mm</dimen>
     <!-- 组件尺寸 -->
-    <dimen name="pw_hero_h">700mm</dimen>
+    <!-- Hero 缩矮：原 700mm 顶部大片空白，压缩到 380mm 只留标题行+副标题 -->
+    <dimen name="pw_hero_h">380mm</dimen>
     <dimen name="pw_tabbar_h">110mm</dimen>
     <dimen name="pw_search_h">70mm</dimen>
     <dimen name="pw_card_h">96mm</dimen>
