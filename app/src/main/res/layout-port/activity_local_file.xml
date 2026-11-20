@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
+    android:background="@color/pw_bg"
     android:layout_height="match_parent"
     android:paddingLeft="@dimen/vs_20"
     android:paddingTop="@dimen/vs_20"
@@ -18,7 +19,7 @@
             android:layout_height="wrap_content"
             android:ellipsize="middle"
             android:singleLine="true"
-            android:textColor="@android:color/white"
+            android:textColor="@color/pw_ink"
             android:textSize="@dimen/ts_30" />
 
         <TextView
@@ -28,7 +29,7 @@
             android:layout_marginTop="@dimen/vs_10"
             android:ellipsize="middle"
             android:singleLine="true"
-            android:textColor="@color/color_CCFFFFFF"
+            android:textColor="@color/pw_ink2"
             android:textSize="@dimen/ts_22" />
 
         <com.owen.tvrecyclerview.widget.TvRecyclerView
@@ -50,7 +51,7 @@
             android:layout_marginTop="@dimen/vs_10"
             android:gravity="center"
             android:text="当前目录为空"
-            android:textColor="@color/color_CCFFFFFF"
+            android:textColor="@color/pw_ink2"
             android:textSize="@dimen/ts_24"
             android:visibility="gone" />
     </LinearLayout>

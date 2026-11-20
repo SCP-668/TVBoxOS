@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <corners android:radius="@dimen/pw_r_lg" />
+    <solid android:color="@color/pw_card" />
+    <stroke android:width="@dimen/pw_divider" android:color="@color/pw_line" />
+</shape>

@@ -130,10 +130,13 @@ public class HomeActivity extends BaseActivity {
             // OnePlus devices may finish applying immersive mode after the first measure.
             // Re-apply the visible top state once the final display metrics are available.
             hideSysBar();
-            ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) topLayout.getLayoutParams();
-            params.topMargin = AutoSizeUtils.mm2px(HomeActivity.this, 10.0f);
-            params.height = AutoSizeUtils.mm2px(HomeActivity.this, 50.0f);
-            topLayout.setLayoutParams(params);
+            // 竖屏：保留 layout-port 里的 Hero 渐变头尺寸，不让横屏硬编码值覆盖
+            if (!isPortrait()) {
+                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) topLayout.getLayoutParams();
+                params.topMargin = AutoSizeUtils.mm2px(HomeActivity.this, 10.0f);
+                params.height = AutoSizeUtils.mm2px(HomeActivity.this, 50.0f);
+                topLayout.setLayoutParams(params);
+            }
             topLayout.setAlpha(1.0f);
             refreshTopInfoTextSize();
             topLayout.requestLayout();
@@ -310,8 +313,59 @@ public class HomeActivity extends BaseActivity {
                 return true;
             }
         });
+        initBottomTabs();
         setLoadSir(this.contentLayout);
         //mHandler.postDelayed(mFindFocus, 500);
+    }
+
+    /**
+     * 竖屏全局底部 Tab：复用现有 Activity 跳转，功能不变。
+     * 首页=回到推荐页；分类=聚焦顶部分类栏；收藏/历史/设置=跳转对应页面。
+     */
+    private void initBottomTabs() {
+        View tabHome = findViewById(R.id.pwTabHome);
+        View tabVod = findViewById(R.id.pwTabVod);
+        View tabCollect = findViewById(R.id.pwTabCollect);
+        View tabHistory = findViewById(R.id.pwTabHistory);
+        View tabSetting = findViewById(R.id.pwTabSetting);
+        if (tabHome == null || tabVod == null || tabCollect == null || tabHistory == null || tabSetting == null) {
+            return;
+        }
+        final View[] tabs = {tabHome, tabVod, tabCollect, tabHistory, tabSetting};
+        View.OnClickListener listener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FastClickCheckUtil.check(v);
+                int id = v.getId();
+                if (id == R.id.pwTabHome) {
+                    selectTab(tabs, 0);
+                    if (mViewPager != null) mViewPager.setCurrentItem(0, false);
+                } else if (id == R.id.pwTabVod) {
+                    selectTab(tabs, 1);
+                    // 有多个分类页则切到第一个分类页，否则聚焦顶部分类栏
+                    if (mViewPager != null && pageAdapter != null && pageAdapter.getCount() > 1) {
+                        mViewPager.setCurrentItem(1, false);
+                    } else if (mGridView != null) {
+                        mGridView.requestFocus();
+                    }
+                } else if (id == R.id.pwTabCollect) {
+                    selectTab(tabs, 2);
+                    jumpActivity(com.github.tvbox.osc.ui.activity.CollectActivity.class);
+                } else if (id == R.id.pwTabHistory) {
+                    selectTab(tabs, 3);
+                    jumpActivity(com.github.tvbox.osc.ui.activity.HistoryActivity.class);
+                } else if (id == R.id.pwTabSetting) {
+                    selectTab(tabs, 4);
+                    jumpActivity(SettingActivity.class);
+                }
+            }
+        };
+        for (View tab : tabs) tab.setOnClickListener(listener);
+        selectTab(tabs, 0);
+    }
+
+    private void selectTab(View[] tabs, int index) {
+        for (int i = 0; i < tabs.length; i++) tabs[i].setSelected(i == index);
     }
 
 
@@ -841,10 +895,11 @@ public class HomeActivity extends BaseActivity {
             int spanCount = (int) Math.floor(sites.size() / 20.0);
             spanCount = Math.min(spanCount, 2);
             tvRecyclerView.setLayoutManager(new V7GridLayoutManager(mSiteSwitchDialog.getContext(), spanCount + 1));
-            // 设置对话框宽度
+            // 设置对话框宽度：竖屏用接近满屏的大宽度，横屏保持原有逻辑
             ConstraintLayout cl_root = mSiteSwitchDialog.findViewById(R.id.cl_root);
             ViewGroup.LayoutParams clp = cl_root.getLayoutParams();
-            clp.width = AutoSizeUtils.mm2px(mSiteSwitchDialog.getContext(), 380 + 200 * spanCount);
+            clp.width = AutoSizeUtils.mm2px(mSiteSwitchDialog.getContext(),
+                    isPortrait() ? 1080 : 380 + 200 * spanCount);
             mSiteSwitchDialog.setTip("请选择首页数据源");
         }
         mSiteSwitchDialog.setAdapter(new SelectDialogAdapter.SelectDialogInterface<SourceBean>() {

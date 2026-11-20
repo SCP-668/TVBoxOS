@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
+    android:background="@color/pw_bg"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:paddingLeft="@dimen/vs_20"
@@ -22,7 +23,7 @@
             android:layout_width="@dimen/vs_220"
             android:layout_height="@dimen/vs_220"
             android:layout_marginBottom="@dimen/vs_14"
-            android:background="@drawable/shape_dialog_bg_main"
+            android:background="@drawable/pw_card"
             android:contentDescription="@null"
             android:padding="@dimen/vs_8" />
 
@@ -32,7 +33,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:lineSpacingMultiplier="1.2"
-            android:textColor="@color/color_FFFFFF"
+            android:textColor="@color/pw_ink"
             android:textSize="@dimen/ts_20" />
 
         <ProgressBar
@@ -50,14 +51,14 @@
             android:layout_marginTop="@dimen/vs_8"
             android:gravity="center"
             android:text="请在扫码后的网页查看上传进度"
-            android:textColor="@color/color_CCFFFFFF"
+            android:textColor="@color/pw_ink2"
             android:textSize="@dimen/ts_18" />
     </LinearLayout>
 
     <View
         android:layout_width="match_parent"
         android:layout_height="@dimen/vs_1"
-        android:background="@color/color_33FFFFFF" />
+        android:background="@drawable/pw_divider" />
 
     <!-- 下半：已上传文件列表 -->
     <LinearLayout
@@ -72,14 +73,14 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/vs_12"
             android:text="已上传文件"
-            android:textColor="@color/color_FFFFFF"
+            android:textColor="@color/pw_ink"
             android:textSize="@dimen/ts_24" />
 
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:background="@drawable/bg_scrollview"
+            android:background="@drawable/pw_card"
             android:fillViewport="true"
             android:paddingLeft="@dimen/vs_10"
             android:paddingTop="@dimen/vs_6"

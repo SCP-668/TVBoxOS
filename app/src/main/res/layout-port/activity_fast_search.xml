@@ -11,6 +11,7 @@
     <!-- 顶部：结果状态 + 分词 -->
     <LinearLayout
         android:layout_width="match_parent"
+    android:background="@color/pw_bg"
         android:layout_height="@dimen/vs_60"
         android:layout_marginTop="@dimen/vs_10"
         android:layout_marginBottom="@dimen/vs_10"
@@ -23,13 +24,13 @@
             android:layout_height="match_parent"
             android:layout_gravity="center_vertical"
             android:layout_marginRight="@dimen/vs_20"
-            android:background="@drawable/bg_fast_search_status"
+            android:background="@drawable/pw_card"
             android:gravity="center"
             android:includeFontPadding="false"
             android:lines="2"
             android:maxLines="2"
             android:text="&#x51C6;&#x5907;&#x641C;&#x7D22;&#10;&#x7ED3;&#x679C; 0"
-            android:textColor="@android:color/white"
+            android:textColor="@color/pw_ink"
             android:textSize="@dimen/ts_16" />
 
         <com.owen.tvrecyclerview.widget.TvRecyclerView

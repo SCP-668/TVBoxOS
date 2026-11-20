@@ -10,4 +10,33 @@
     <dimen name="vs_16">16mm</dimen>
     <dimen name="vs_44">44mm</dimen>
     <dimen name="vs_78">78mm</dimen>
+    <!-- 竖屏弹窗放大专用 -->
+    <dimen name="ts_32">32mm</dimen>
+    <dimen name="vs_900">900mm</dimen>
+    <dimen name="vs_1080">1080mm</dimen>
+
+    <!-- ===== 清漾设计系统 token（竖屏） ===== -->
+    <!-- 圆角 -->
+    <dimen name="pw_r_xs">8mm</dimen>
+    <dimen name="pw_r_sm">14mm</dimen>
+    <dimen name="pw_r_md">22mm</dimen>
+    <dimen name="pw_r_lg">32mm</dimen>
+    <dimen name="pw_r_pill">60mm</dimen>
+    <!-- 间距 -->
+    <dimen name="pw_pad">24mm</dimen>
+    <dimen name="pw_gap">16mm</dimen>
+    <dimen name="pw_gap_sm">10mm</dimen>
+    <!-- 字号 -->
+    <dimen name="pw_ts_title">52mm</dimen>
+    <dimen name="pw_ts_section">36mm</dimen>
+    <dimen name="pw_ts_body">30mm</dimen>
+    <dimen name="pw_ts_sub">26mm</dimen>
+    <dimen name="pw_ts_caption">22mm</dimen>
+    <!-- 组件尺寸 -->
+    <dimen name="pw_hero_h">700mm</dimen>
+    <dimen name="pw_tabbar_h">110mm</dimen>
+    <dimen name="pw_search_h">70mm</dimen>
+    <dimen name="pw_card_h">96mm</dimen>
+    <dimen name="pw_avatar">80mm</dimen>
+    <dimen name="pw_divider">1mm</dimen>
 </resources>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/pw_bg"
+    android:orientation="vertical">
+
+    <!-- 顶部标题区（薄荷渐变） -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/vs_100"
+        android:background="@drawable/pw_hero_gradient"
+        android:gravity="center_vertical"
+        android:paddingLeft="@dimen/pw_pad"
+        android:paddingTop="@dimen/vs_30"
+        android:text="设置"
+        android:textColor="@color/pw_card"
+        android:textSize="@dimen/pw_ts_title"
+        android:textStyle="bold" />
+
+    <!-- 左侧菜单占位（Java 依赖 id，隐藏） -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/vs_0"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <com.owen.tvrecyclerview.widget.TvRecyclerView
+            android:id="@+id/mGridView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+
+    <com.github.tvbox.osc.ui.tv.widget.NoScrollViewPager
+        android:id="@+id/mViewPager"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/vs_0"
+        android:layout_weight="1" />
+</LinearLayout>
