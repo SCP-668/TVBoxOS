@@ -176,7 +176,9 @@ public class GridFragment extends BaseLazyFragment {
 
     private int currentSpanCount() {
         if (isFolederMode()) return 1;
-        int span = gridSpanCount();
+        // 竖屏手机改 2 列：3 列海报撑满后彼此紧贴显得拥挤，2 列留白更舒服、卡片也更大。
+        // 只影响分类页，不动 BaseActivity.gridSpanCount()（收藏/历史页仍用原列数）。
+        int span = isPortrait() ? 2 : gridSpanCount();
         if (style != null) span = ImgUtil.spanCountByStyle(style, span);
         return Math.max(1, span);
     }
@@ -204,8 +206,8 @@ public class GridFragment extends BaseLazyFragment {
         int screenH = getResources().getDisplayMetrics().heightPixels;
         int shortSide = Math.min(screenW, screenH);
         if (shortSide <= 0) return;
-        final int pad = Math.round(shortSide * 0.018f);
-        final int gap = Math.round(shortSide * 0.020f);
+        final int pad = Math.round(shortSide * 0.025f);
+        final int gap = Math.round(shortSide * 0.030f);
         mGridView.setPadding(pad, pad, pad, pad);
         mGridView.setSpacingWithMargins(gap, gap);
         final int span = currentSpanCount();
@@ -249,10 +251,7 @@ public class GridFragment extends BaseLazyFragment {
         if(isFolederMode()){
             mGridView.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
         }else{
-            int spanCount = gridSpanCount();
-            if (style != null) {
-                spanCount = ImgUtil.spanCountByStyle(style, spanCount);
-            }
+            int spanCount = currentSpanCount();
             if (spanCount == 1) {
                 mGridView.setLayoutManager(new V7LinearLayoutManager(mContext, spanCount, false));
             } else {
