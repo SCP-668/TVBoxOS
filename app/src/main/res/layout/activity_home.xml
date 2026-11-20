@@ -35,7 +35,7 @@
                 android:gravity="left|center_vertical"
                 android:text="@string/app_name"
                 android:textAlignment="gravity"
-                android:textColor="@color/pw_card"
+                android:textColor="@color/pw_on_hero"
                 android:textSize="@dimen/pw_ts_title"
                 android:textStyle="bold" />
 
@@ -54,7 +54,7 @@
                 android:includeFontPadding="false"
                 android:maxLines="1"
                 android:textAlignment="gravity"
-                android:textColor="@color/pw_card"
+                android:textColor="@color/pw_on_hero"
                 android:textSize="@dimen/pw_ts_caption"
                 tools:text="2026/06/16  周二  15:01" />
         </LinearLayout>
@@ -79,7 +79,7 @@
         android:clipToPadding="false"
         android:orientation="vertical"
         android:paddingTop="@dimen/pw_sheet_pad_top"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/pwTabBar"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topLayout"

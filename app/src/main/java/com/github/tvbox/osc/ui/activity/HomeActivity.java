@@ -8,6 +8,7 @@ import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.TypedValue;
@@ -326,18 +327,9 @@ public class HomeActivity extends BaseActivity {
         if (tabHome == null || tabVod == null || tabCollect == null || tabHistory == null || tabSetting == null) {
             return;
         }
-        // 一套响应式布局：底部 Tab 仅竖屏手机显示；横屏 TV 隐藏，用遥控器导航
-        View tabBar = findViewById(R.id.pwTabBar);
-        if (tabBar != null) {
-            boolean portrait = isPortrait();
-            tabBar.setVisibility(portrait ? View.VISIBLE : View.GONE);
-            // 竖屏时内容区底部留出 Tab 高度，避免被遮挡；横屏无 Tab 则不占用
-            if (contentLayout != null) {
-                int padBottom = portrait ? getResources().getDimensionPixelSize(R.dimen.pw_tabbar_h) : 0;
-                contentLayout.setPadding(contentLayout.getPaddingLeft(), contentLayout.getPaddingTop(),
-                        contentLayout.getPaddingRight(), padBottom);
-            }
-        }
+        // 一套响应式布局：底部 Tab 横竖屏都常显（用户明确要底部导航），
+        // 仅按方向调整 Hero 高度与内容区层叠，保证两种方向都完整可用。
+        applyResponsiveChrome();
         final View[] tabs = {tabHome, tabVod, tabCollect, tabHistory, tabSetting};
         View.OnClickListener listener = new View.OnClickListener() {
             @Override
@@ -373,6 +365,62 @@ public class HomeActivity extends BaseActivity {
 
     private void selectTab(View[] tabs, int index) {
         for (int i = 0; i < tabs.length; i++) tabs[i].setSelected(i == index);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // 方向切换后重新应用响应式布局（Hero 高度 / 内容区层叠 / 底部 Tab），不重建界面
+        applyResponsiveChrome();
+        if (topLayout != null) topLayout.requestLayout();
+        if (contentLayout != null) contentLayout.requestLayout();
+    }
+
+    /**
+     * 一套响应式布局的方向自适应：底部导航横竖屏常显；横屏压缩 Hero 高度、
+     * 取消内容区层叠负 margin，让内容区拿回足够空间（避免横屏只剩一半可视区）。
+     */
+    private void applyResponsiveChrome() {
+        boolean portrait = isPortrait();
+
+        View tabBar = findViewById(R.id.pwTabBar);
+        if (tabBar != null) {
+            tabBar.setVisibility(View.VISIBLE);
+        }
+
+        if (contentLayout != null) {
+            // 内容区底部已约束到导航栏顶部，这里只留一点缓冲，避免最后一行贴边
+            int padBottom = getResources().getDimensionPixelSize(R.dimen.vs_10);
+            // 竖屏层叠式圆角需要较大的顶部留白；横屏无层叠，收紧顶部间距多出可视区
+            int padTop = portrait
+                    ? getResources().getDimensionPixelSize(R.dimen.pw_sheet_pad_top)
+                    : getResources().getDimensionPixelSize(R.dimen.vs_20);
+            contentLayout.setPadding(contentLayout.getPaddingLeft(), padTop,
+                    contentLayout.getPaddingRight(), padBottom);
+            // 内容区层叠负 margin 仅竖屏保留；横屏取消，避免盖住 Hero 文字并挤压可视区
+            ViewGroup.LayoutParams lp = contentLayout.getLayoutParams();
+            if (lp instanceof ConstraintLayout.LayoutParams) {
+                ConstraintLayout.LayoutParams clp = (ConstraintLayout.LayoutParams) lp;
+                clp.topMargin = portrait
+                        ? getResources().getDimensionPixelSize(R.dimen.pw_sheet_overlap)
+                        : 0;
+                contentLayout.setLayoutParams(clp);
+            }
+        }
+
+        if (topLayout != null) {
+            // 横屏 Hero 高度按屏幕高度比例收敛，避免 380mm 固定值吃掉半屏
+            ViewGroup.LayoutParams tlp = topLayout.getLayoutParams();
+            if (tlp != null) {
+                if (portrait) {
+                    tlp.height = getResources().getDimensionPixelSize(R.dimen.pw_hero_h);
+                } else {
+                    int screenH = getResources().getDisplayMetrics().heightPixels;
+                    tlp.height = (int) (screenH * 0.34f);
+                }
+                topLayout.setLayoutParams(tlp);
+            }
+        }
     }
 
 

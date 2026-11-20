@@ -60,7 +60,7 @@
                 android:focusable="true"
                 android:gravity="center"
                 android:text="搜索"
-                android:textColor="@color/pw_card"
+                android:textColor="@color/pw_on_hero"
                 android:textSize="@dimen/ts_20" />
 
             <Space

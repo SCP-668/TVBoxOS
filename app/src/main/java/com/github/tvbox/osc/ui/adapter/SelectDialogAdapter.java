@@ -85,10 +85,12 @@ public class SelectDialogAdapter<T> extends ListAdapter<T, SelectDialogAdapter.S
         String name = dialogInterface.getDisplay(value);
         TextView view = holder.itemView.findViewById(R.id.tvName);
         if (position == select) {
-            view.setTextColor(0xff02f8e1);
+            // 选中项用主题青色高亮（对齐 PC 端 --cyan），深色卡面上清晰可读
+            view.setTextColor(view.getContext().getResources().getColor(R.color.pw_blue));
             view .setTypeface(Typeface.defaultFromStyle(Typeface.BOLD));
         }else {
-            view.setTextColor(Color.WHITE);
+            // 普通项用主题亮白文字，不再硬编码纯白/荧光色
+            view.setTextColor(view.getContext().getResources().getColor(R.color.dialog_text_primary));
             view .setTypeface(Typeface.defaultFromStyle(Typeface.NORMAL));
         }
         view.setText(name);

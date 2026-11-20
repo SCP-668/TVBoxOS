@@ -49,7 +49,7 @@
                 android:paddingTop="@dimen/vs_3"
                 android:paddingBottom="@dimen/vs_3"
                 android:singleLine="true"
-                android:textColor="@color/pw_card"
+                android:textColor="@color/pw_on_hero"
                 android:textSize="@dimen/pw_ts_caption"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -84,7 +84,7 @@
                 android:marqueeRepeatLimit="marquee_forever"
                 android:singleLine="true"
                 android:text="Title"
-                android:textColor="@color/pw_card"
+                android:textColor="@color/pw_on_hero"
                 android:textSize="@dimen/pw_ts_body"
                 android:textStyle="bold" />
         </LinearLayout>

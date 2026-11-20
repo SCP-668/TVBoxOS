@@ -197,7 +197,7 @@
                 android:nextFocusUp="@id/previewPlayerBlock"
                 android:gravity="center"
                 android:text="立即播放"
-                android:textColor="@color/pw_card"
+                android:textColor="@color/pw_on_hero"
                 android:textSize="@dimen/vs_20" />
 
             <TextView

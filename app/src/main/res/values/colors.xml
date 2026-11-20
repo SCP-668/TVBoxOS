@@ -44,45 +44,47 @@
     <color name="color_59353744">#59353744</color>
     <color name="color_80FF0057">#66FF0057</color>
     <color name="color_000000_60">#99000000</color>
-    <color name="color_dialog_bg">#F2F5FA</color>
-    <color name="color_scrollview_bg">#F7F9FE</color>
-    <color name="color_text_primary">#1B2740</color>
+    <color name="color_dialog_bg">#151A3A</color>
+    <color name="color_scrollview_bg">#10142E</color>
+    <color name="color_text_primary">#EAF0FF</color>
 
-    <!-- ===== 清漾 Clearwave 浅色设计系统（横竖屏共用唯一一套） ===== -->
-    <color name="pw_bg">#F2F5FA</color>
-    <color name="pw_bg_alt">#E9EEF6</color>
-    <color name="pw_card">#FFFFFF</color>
-    <color name="pw_card_soft">#F6F9FE</color>
-    <color name="pw_ink">#1B2740</color>
-    <color name="pw_ink2">#5A6B87</color>
-    <color name="pw_muted">#96A4BA</color>
-    <color name="pw_mint">#2FC2AE</color>
-    <color name="pw_mint_dark">#1FA894</color>
-    <color name="pw_mint_soft">#DFF6F1</color>
-    <color name="pw_blue">#5FA8F5</color>
-    <color name="pw_blue_dark">#3D86CF</color>
-    <color name="pw_blue_soft">#E5F0FD</color>
-    <color name="pw_coral">#FF809F</color>
-    <color name="pw_coral_soft">#FFE8EE</color>
-    <color name="pw_hero_start">#43CFC0</color>
-    <color name="pw_hero_end">#5FA8F5</color>
-    <color name="pw_line">#E7ECF3</color>
+    <!-- ===== TVBox 深蓝紫科技主题（对齐 PC 端 ui/style.css，横竖屏共用唯一一套） ===== -->
+    <color name="pw_bg">#0A0E27</color>
+    <color name="pw_bg_alt">#10142E</color>
+    <color name="pw_card">#1B2148</color>
+    <color name="pw_card_soft">#242B57</color>
+    <color name="pw_ink">#EAF0FF</color>
+    <color name="pw_ink2">#9BA6C4</color>
+    <color name="pw_muted">#6F7BA3</color>
+    <color name="pw_mint">#5B4FE9</color>
+    <color name="pw_mint_dark">#4A3FD0</color>
+    <color name="pw_mint_soft">#23204A</color>
+    <color name="pw_blue">#22D3EE</color>
+    <color name="pw_blue_dark">#19B5CC</color>
+    <color name="pw_blue_soft">#10283A</color>
+    <color name="pw_coral">#FF4FA3</color>
+    <color name="pw_coral_soft">#3A1A2E</color>
+    <color name="pw_hero_start">#2B2F6B</color>
+    <color name="pw_hero_end">#14183A</color>
+    <color name="pw_line">#2A3157</color>
     <color name="pw_scrim">#99000000</color>
     <color name="pw_scrim_soft">#66000000</color>
-    <color name="pw_tab_active">#2FC2AE</color>
-    <color name="pw_tab_inactive">#9AA8BC</color>
-    <color name="pw_shadow">#1A1B2740</color>
-    <color name="pw_focus">#2FC2AE</color>
+    <color name="pw_tab_active">#22D3EE</color>
+    <color name="pw_tab_inactive">#6F7BA3</color>
+    <color name="pw_shadow">#3310182F</color>
+    <color name="pw_focus">#5B4FE9</color>
+    <!-- Hero/深色卡面上的亮色文字（替代原先用 pw_card 当白字的写法） -->
+    <color name="pw_on_hero">#EAF0FF</color>
 
-    <!-- Unified dialog palette — 浅色，横竖屏共用 -->
-    <color name="dialog_panel_bg">#F7F9FE</color>
-    <color name="dialog_panel_stroke">#E7ECF3</color>
-    <color name="dialog_control_bg">#EDF2F9</color>
-    <color name="dialog_control_bg_focused">#2FC2AE</color>
-    <color name="dialog_control_stroke">#E7ECF3</color>
-    <color name="dialog_control_stroke_focused">#2FC2AE</color>
-    <color name="dialog_input_bg">#EDF2F9</color>
-    <color name="dialog_text_primary">#1B2740</color>
-    <color name="dialog_text_hint">#96A4BA</color>
+    <!-- Unified dialog palette — 深色，横竖屏共用 -->
+    <color name="dialog_panel_bg">#151A3A</color>
+    <color name="dialog_panel_stroke">#2A3157</color>
+    <color name="dialog_control_bg">#20264F</color>
+    <color name="dialog_control_bg_focused">#5B4FE9</color>
+    <color name="dialog_control_stroke">#2A3157</color>
+    <color name="dialog_control_stroke_focused">#22D3EE</color>
+    <color name="dialog_input_bg">#20264F</color>
+    <color name="dialog_text_primary">#EAF0FF</color>
+    <color name="dialog_text_hint">#9BA6C4</color>
 
 </resources>
