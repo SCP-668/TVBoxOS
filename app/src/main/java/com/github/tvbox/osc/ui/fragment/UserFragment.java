@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.BounceInterpolator;
 import android.widget.LinearLayout;
 import android.widget.Toast;
@@ -104,6 +105,15 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
             tvHotList.setPadding(pad, 0, pad, 0);
             return;
         }
+        // 一套响应式布局后 tvHotList 是 0dp+weight，item 又是竖屏 730mm 大卡片。
+        // 横屏下 Hero(380mm)+入口(180mm) 会把容器压到远小于 item 高度，TV 焦点滚动失效。
+        // 横屏恢复旧版"一行海报"的容器高度，保证焦点驱动滚动正常；竖屏走上面的分支不受影响。
+        ViewGroup.LayoutParams hotLp = tvHotList.getLayoutParams();
+        if (hotLp != null) {
+            hotLp.height = getResources().getDimensionPixelSize(R.dimen.vs_280);
+            tvHotList.setLayoutParams(hotLp);
+        }
+        tvHotList.setClipChildren(true);
         if (Hawk.get(HawkConfig.HOME_REC_STYLE, false)) {
             tvHotList.setVisibility(View.VISIBLE);
             tvHotList.setHasFixedSize(true);

@@ -35,6 +35,7 @@
 
         <activity
             android:name=".ui.activity.HomeActivity"
+            android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize"
             android:exported="true"
             android:screenOrientation="unspecified">
             <intent-filter>

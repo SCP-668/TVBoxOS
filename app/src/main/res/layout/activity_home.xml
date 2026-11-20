@@ -74,14 +74,16 @@
         android:id="@+id/contentLayout"
         android:layout_width="@dimen/vs_0"
         android:layout_height="@dimen/vs_0"
+        android:background="@drawable/pw_content_sheet"
         android:clipChildren="false"
         android:clipToPadding="false"
         android:orientation="vertical"
-        android:paddingTop="@dimen/vs_20"
+        android:paddingTop="@dimen/pw_sheet_pad_top"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/topLayout">
+        app:layout_constraintTop_toBottomOf="@+id/topLayout"
+        android:layout_marginTop="-@dimen/pw_sheet_overlap">
 
         <com.owen.tvrecyclerview.widget.TvRecyclerView
             android:id="@+id/mGridView"
@@ -111,27 +113,27 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent">
 
-        <LinearLayout android:id="@+id/pwTabHome" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_btn_soft">
+        <LinearLayout android:id="@+id/pwTabHome" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_tab_item_bg">
             <ImageView android:layout_width="@dimen/vs_50" android:layout_height="@dimen/vs_50" android:src="@drawable/pw_ic_home" app:tint="@color/pw_icon_tint" />
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="首页" android:textColor="@color/pw_tab_tint" android:textSize="@dimen/pw_ts_caption" />
         </LinearLayout>
 
-        <LinearLayout android:id="@+id/pwTabVod" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_btn_soft">
+        <LinearLayout android:id="@+id/pwTabVod" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_tab_item_bg">
             <ImageView android:layout_width="@dimen/vs_50" android:layout_height="@dimen/vs_50" android:src="@drawable/pw_ic_grid" app:tint="@color/pw_icon_tint" />
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="分类" android:textColor="@color/pw_tab_tint" android:textSize="@dimen/pw_ts_caption" />
         </LinearLayout>
 
-        <LinearLayout android:id="@+id/pwTabCollect" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_btn_soft">
+        <LinearLayout android:id="@+id/pwTabCollect" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_tab_item_bg">
             <ImageView android:layout_width="@dimen/vs_50" android:layout_height="@dimen/vs_50" android:src="@drawable/pw_ic_collect" app:tint="@color/pw_icon_tint" />
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="收藏" android:textColor="@color/pw_tab_tint" android:textSize="@dimen/pw_ts_caption" />
         </LinearLayout>
 
-        <LinearLayout android:id="@+id/pwTabHistory" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_btn_soft">
+        <LinearLayout android:id="@+id/pwTabHistory" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_tab_item_bg">
             <ImageView android:layout_width="@dimen/vs_50" android:layout_height="@dimen/vs_50" android:src="@drawable/pw_ic_history" app:tint="@color/pw_icon_tint" />
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="历史" android:textColor="@color/pw_tab_tint" android:textSize="@dimen/pw_ts_caption" />
         </LinearLayout>
 
-        <LinearLayout android:id="@+id/pwTabSetting" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_btn_soft">
+        <LinearLayout android:id="@+id/pwTabSetting" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_tab_item_bg">
             <ImageView android:layout_width="@dimen/vs_50" android:layout_height="@dimen/vs_50" android:src="@drawable/pw_ic_setting" app:tint="@color/pw_icon_tint" />
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="设置" android:textColor="@color/pw_tab_tint" android:textSize="@dimen/pw_ts_caption" />
         </LinearLayout>

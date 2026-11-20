@@ -78,20 +78,20 @@ public class HomeHotVodAdapter extends BaseQuickAdapter<Movie.Video, BaseViewHol
     }
 
     private void applyStyleToImage(final ImageView ivThumb) {
-        if (style != null) {
-            // 竖屏走 layout-port 的整列宽度卡片，不能用横屏的固定宽度覆盖，
-            // 否则固定宽度小于列宽、item 靠左对齐会造成左右间距不一致。
-            if (mContext.getResources().getConfiguration().orientation
-                    == android.content.res.Configuration.ORIENTATION_PORTRAIT) {
-                return;
-            }
-            ViewGroup container = (ViewGroup) ivThumb.getParent();
-            int width = defaultWidth;
-            int height = (int) (width / style.ratio);
-            ViewGroup.LayoutParams containerParams = container.getLayoutParams();
-            containerParams.height = AutoSizeUtils.mm2px(mContext, height);
-            containerParams.width = AutoSizeUtils.mm2px(mContext, width);
-            container.setLayoutParams(containerParams);
+        // 竖屏走整列宽度的大卡片，不能用横屏固定宽度覆盖，
+        // 否则固定宽度小于列宽、item 靠左对齐会造成左右间距不一致。
+        if (mContext.getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_PORTRAIT) {
+            return;
         }
+        // 横屏：统一布局后 item 是竖屏 730mm 大卡，必须改回横屏尺寸，
+        // 否则 item 高度远大于 tvHotList 容器，焦点滚动失效（style==null 的默认豆瓣源同样需要修正）。
+        ViewGroup container = (ViewGroup) ivThumb.getParent();
+        int width = (style != null) ? defaultWidth : ImgUtil.defaultWidth;
+        int height = (style != null) ? (int) (width / style.ratio) : ImgUtil.defaultHeight;
+        ViewGroup.LayoutParams containerParams = container.getLayoutParams();
+        containerParams.height = AutoSizeUtils.mm2px(mContext, height);
+        containerParams.width = AutoSizeUtils.mm2px(mContext, width);
+        container.setLayoutParams(containerParams);
     }
 }
