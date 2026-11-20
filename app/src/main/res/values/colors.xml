@@ -70,7 +70,7 @@
     <color name="pw_scrim">#99000000</color>
     <color name="pw_scrim_soft">#66000000</color>
     <color name="pw_tab_active">#22D3EE</color>
-    <color name="pw_tab_inactive">#6F7BA3</color>
+    <color name="pw_tab_inactive">#93A3CB</color>
     <color name="pw_shadow">#3310182F</color>
     <color name="pw_focus">#5B4FE9</color>
     <!-- Hero/深色卡面上的亮色文字（替代原先用 pw_card 当白字的写法） -->

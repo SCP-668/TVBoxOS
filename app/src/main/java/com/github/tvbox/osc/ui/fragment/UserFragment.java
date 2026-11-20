@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.BounceInterpolator;
@@ -140,7 +141,9 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
                 ViewGroup.MarginLayoutParams clp = (ViewGroup.MarginLayoutParams) card.getLayoutParams();
                 clp.setMargins(gap, gap, gap, gap);
                 card.setLayoutParams(clp);
-                if (!(card instanceof ViewGroup)) continue;
+                // 竖屏是窄卡：图标在上、文字在下；横屏是大宽卡：图标在左、文字在右，避免中间留一片空白
+                card.setOrientation(portrait ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
+                card.setGravity(Gravity.CENTER);
                 ImageView icon = null;
                 TextView label = null;
                 for (int i = 0; i < card.getChildCount(); i++) {
@@ -157,7 +160,13 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
                 if (label != null) {
                     label.setTextSize(TypedValue.COMPLEX_UNIT_PX, labelSize);
                     ViewGroup.MarginLayoutParams llp = (ViewGroup.MarginLayoutParams) label.getLayoutParams();
-                    llp.topMargin = Math.round(shortSide * 0.008f);
+                    if (portrait) {
+                        llp.topMargin = Math.round(shortSide * 0.008f);
+                        llp.leftMargin = 0;
+                    } else {
+                        llp.topMargin = 0;
+                        llp.leftMargin = gap;
+                    }
                     label.setLayoutParams(llp);
                 }
             }

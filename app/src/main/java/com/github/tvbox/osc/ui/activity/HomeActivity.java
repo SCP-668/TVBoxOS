@@ -449,7 +449,7 @@ public class HomeActivity extends BaseActivity {
         if (topLayout != null) {
             ViewGroup.LayoutParams tlp = topLayout.getLayoutParams();
             // Hero 只放标题 + 一句话，竖屏更紧凑（把高度留给内容），横屏稍高
-            heroHeightPx = Math.round(screenH * (portrait ? 0.145f : 0.235f));
+            heroHeightPx = Math.round(screenH * (portrait ? 0.128f : 0.215f));
             if (tlp != null) {
                 tlp.height = heroHeightPx;
                 topLayout.setLayoutParams(tlp);
