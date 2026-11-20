@@ -83,7 +83,7 @@
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/topLayout"
-        android:layout_marginTop="-@dimen/pw_sheet_overlap">
+        android:layout_marginTop="@dimen/pw_sheet_overlap">
 
         <com.owen.tvrecyclerview.widget.TvRecyclerView
             android:id="@+id/mGridView"

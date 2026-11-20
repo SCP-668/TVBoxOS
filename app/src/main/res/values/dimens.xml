@@ -132,6 +132,6 @@
     <dimen name="pw_avatar">80mm</dimen>
     <dimen name="pw_divider">1mm</dimen>
     <!-- 白色内容卡叠到蓝色 Hero 上的高度，形成模板式层叠效果 -->
-    <dimen name="pw_sheet_overlap">110mm</dimen>
+    <dimen name="pw_sheet_overlap">-110mm</dimen>
     <dimen name="pw_sheet_pad_top">46mm</dimen>
 </resources>
