@@ -74,14 +74,23 @@ public class HomeHotVodAdapter extends BaseQuickAdapter<Movie.Video, BaseViewHol
         } else {
             ivThumb.setImageDrawable(ImgUtil.createTextDrawable(item.name));
         }
-        applyStyleToImage(ivThumb);
+        applyStyleToImage(helper, ivThumb);
     }
 
-    private void applyStyleToImage(final ImageView ivThumb) {
+    private void applyStyleToImage(BaseViewHolder helper, final ImageView ivThumb) {
         // 竖屏走整列宽度的大卡片，不能用横屏固定宽度覆盖，
         // 否则固定宽度小于列宽、item 靠左对齐会造成左右间距不一致。
-        if (mContext.getResources().getConfiguration().orientation
-                == android.content.res.Configuration.ORIENTATION_PORTRAIT) {
+        boolean portrait = mContext.getResources().getConfiguration().orientation
+                == android.content.res.Configuration.ORIENTATION_PORTRAIT;
+        // 卡片根布局默认 match_parent：竖屏对应网格列宽（正确），
+        // 横屏对应"一行横向排列"时会被撑成整屏宽，导致一个 item 占满全部空间、列表滚不动。
+        View itemView = helper.itemView;
+        if (portrait) {
+            ViewGroup.LayoutParams ilp = itemView.getLayoutParams();
+            if (ilp != null && ilp.width != ViewGroup.LayoutParams.MATCH_PARENT) {
+                ilp.width = ViewGroup.LayoutParams.MATCH_PARENT;
+                itemView.setLayoutParams(ilp);
+            }
             return;
         }
         // 横屏：统一布局后 item 是竖屏 730mm 大卡，必须改回横屏尺寸，
@@ -101,5 +110,15 @@ public class HomeHotVodAdapter extends BaseQuickAdapter<Movie.Video, BaseViewHol
         containerParams.height = hPx;
         containerParams.width = wPx;
         container.setLayoutParams(containerParams);
+
+        // 关键：item 根宽必须固定成卡片宽度，不能是 match_parent，
+        // 否则横向列表里每个 item 都占满整行，看不到后续海报也滚不动。
+        ViewGroup.LayoutParams ilp = itemView.getLayoutParams();
+        if (ilp != null) {
+            int pad = Math.max(1, (int) (mContext.getResources().getDisplayMetrics().density * 2));
+            ilp.width = wPx + pad * 2;
+            ilp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            itemView.setLayoutParams(ilp);
+        }
     }
 }
