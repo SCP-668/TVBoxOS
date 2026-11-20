@@ -130,13 +130,8 @@ public class HomeActivity extends BaseActivity {
             // OnePlus devices may finish applying immersive mode after the first measure.
             // Re-apply the visible top state once the final display metrics are available.
             hideSysBar();
-            // 竖屏：保留 layout-port 里的 Hero 渐变头尺寸，不让横屏硬编码值覆盖
-            if (!isPortrait()) {
-                ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) topLayout.getLayoutParams();
-                params.topMargin = AutoSizeUtils.mm2px(HomeActivity.this, 10.0f);
-                params.height = AutoSizeUtils.mm2px(HomeActivity.this, 50.0f);
-                topLayout.setLayoutParams(params);
-            }
+            // 一套响应式布局：横竖屏共用同一个浅色 Hero，不再用横屏硬编码高度压缩，
+            // 否则标题/副标题会被裁切重叠。保留布局里的自然高度即可。
             topLayout.setAlpha(1.0f);
             refreshTopInfoTextSize();
             topLayout.requestLayout();
