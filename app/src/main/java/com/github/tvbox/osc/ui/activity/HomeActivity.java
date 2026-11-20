@@ -399,7 +399,7 @@ public class HomeActivity extends BaseActivity {
             // Hero 高度按屏高比例：竖屏 22%（约 420px，露出标题+副标题），横屏 30%
             ViewGroup.LayoutParams tlp = topLayout.getLayoutParams();
             if (tlp != null) {
-                tlp.height = (int) (screenH * (portrait ? 0.22f : 0.30f));
+                tlp.height = (int) (screenH * (portrait ? 0.22f : 0.26f));
                 topLayout.setLayoutParams(tlp);
             }
         }

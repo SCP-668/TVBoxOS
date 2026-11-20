@@ -113,9 +113,17 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
         if (entryRow != null) {
             ViewGroup.LayoutParams elp = entryRow.getLayoutParams();
             if (elp != null) {
-                elp.height = (int) (screenH * 0.12f);
+                elp.height = (int) (screenH * 0.09f);
                 entryRow.setLayoutParams(elp);
             }
+        }
+        // 横屏同时收紧"为你推荐"标题的上下留白，把空间让给列表
+        View recTitle = getView() == null ? null : getView().findViewById(R.id.recTitle);
+        if (recTitle != null && recTitle.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+            ViewGroup.MarginLayoutParams rlp = (ViewGroup.MarginLayoutParams) recTitle.getLayoutParams();
+            rlp.topMargin = (int) (screenH * 0.01f);
+            rlp.bottomMargin = (int) (screenH * 0.006f);
+            recTitle.setLayoutParams(rlp);
         }
         ViewGroup.LayoutParams hotLp = tvHotList.getLayoutParams();
         if (hotLp != null) {
