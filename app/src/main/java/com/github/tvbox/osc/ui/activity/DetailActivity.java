@@ -171,6 +171,12 @@ public class DetailActivity extends BaseActivity {
     @Override
     protected void init() {
         EventBus.getDefault().register(this);
+        // 竖屏手机不用"悬浮预览播放器"：它是绝对定位的全宽遮罩，会把海报/标题/简介/播放/收藏
+        // 整块详情页盖住，只剩视频+选集按钮（用户反馈"播放页显示不完整"）。
+        // 竖屏手机改成完整详情页：点播放/选集再进全屏播放器；TV 与横屏保留原预览逻辑。
+        if (isPortrait() && !com.github.tvbox.osc.util.ScreenUtils.isTv(this)) {
+            showPreview = false;
+        }
         initView();
         initViewModel();
         initData();

@@ -402,8 +402,8 @@ public class HomeActivity extends BaseActivity {
         if (topLayout != null) topLayout.requestLayout();
         if (contentLayout != null) contentLayout.requestLayout();
         for (BaseLazyFragment f : fragments) {
-            if (f instanceof UserFragment && f.isAdded() && f.getView() != null) {
-                ((UserFragment) f).applyResponsiveLayout();
+            if (f != null && f.isAdded() && f.getView() != null) {
+                f.applyResponsiveLayout();
             }
         }
     }

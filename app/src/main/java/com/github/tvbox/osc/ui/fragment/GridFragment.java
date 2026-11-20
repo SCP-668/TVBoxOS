@@ -173,6 +173,53 @@ public class GridFragment extends BaseLazyFragment {
     }
 
     private ImgUtil.Style style;
+
+    private int currentSpanCount() {
+        if (isFolederMode()) return 1;
+        int span = gridSpanCount();
+        if (style != null) span = ImgUtil.spanCountByStyle(style, span);
+        return Math.max(1, span);
+    }
+
+    /** 旋转/方向变化后重排（不重建数据） */
+    @Override
+    public void applyResponsiveLayout() {
+        if (!isAdded() || mGridView == null || gridAdapter == null) return;
+        int span = currentSpanCount();
+        if (span == 1) {
+            mGridView.setLayoutManager(new V7LinearLayoutManager(mContext, 1, false));
+        } else {
+            mGridView.setLayoutManager(new V7GridLayoutManager(mContext, span));
+        }
+        applyGridMetrics();
+    }
+
+    /**
+     * 卡片宽度按网格实测列宽算，撑满每一列；之前 item 固定 214mm，
+     * GridLayoutManager 均分列宽后 item 偏窄 -> 列间巨大空隙、整体不居中。
+     */
+    private void applyGridMetrics() {
+        if (mGridView == null || gridAdapter == null) return;
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        int screenH = getResources().getDisplayMetrics().heightPixels;
+        int shortSide = Math.min(screenW, screenH);
+        if (shortSide <= 0) return;
+        final int pad = Math.round(shortSide * 0.018f);
+        final int gap = Math.round(shortSide * 0.020f);
+        mGridView.setPadding(pad, pad, pad, pad);
+        mGridView.setSpacingWithMargins(gap, gap);
+        final int span = currentSpanCount();
+        mGridView.post(() -> {
+            if (!isAdded() || mGridView.getWidth() <= 0 || gridAdapter == null) return;
+            int avail = mGridView.getWidth() - pad * 2;
+            int cell = Math.max(1, avail / span - gap);
+            float ratio = (style != null && style.ratio > 0.2f) ? style.ratio : (214f / 280f);
+            int height = Math.round(cell / ratio);
+            gridAdapter.setMetrics(cell, height);
+            gridAdapter.notifyDataSetChanged();
+        });
+    }
+
     // 更改当前页面
     private void createView() {
         this.saveCurrentView(); // 保存当前页面
@@ -213,6 +260,7 @@ public class GridFragment extends BaseLazyFragment {
             }
         }
         mGridView.setAdapter(gridAdapter);
+        applyGridMetrics();
 
         gridAdapter.setOnLoadMoreListener(new BaseQuickAdapter.RequestLoadMoreListener() {
             @Override

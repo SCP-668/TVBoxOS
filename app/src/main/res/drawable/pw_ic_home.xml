@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="64dp" android:height="64dp" android:viewportWidth="1024" android:viewportHeight="1024">
-    <path android:pathData="M512,160L128,470h96v394h224V640h128v224h224V470h96zM512,160l384,310h-96v394H576V640H448v224H224V470H128z" android:fillColor="#FFFFFFFF" />
+    <!-- 原图标两条反向子路径在 nonzero 填充规则下相互抵消，首页图标完全不显示；改为单条闭合路径 -->
+    <path android:pathData="M512,128 L96,512 H208 V896 H432 V640 H592 V896 H816 V512 H928 Z" android:fillColor="#FFFFFFFF" />
 </vector>

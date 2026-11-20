@@ -21,6 +21,15 @@ public class GridAdapter extends BaseQuickAdapter<Movie.Video, BaseViewHolder> {
     private int defaultWidth;
     public ImgUtil.Style style;
 
+    /** 卡片尺寸由 GridFragment 按网格实测列宽写入，避免 mm 写死导致卡片过小、列不居中 */
+    private int cardW = 0;
+    private int cardH = 0;
+
+    public void setMetrics(int cardW, int cardH) {
+        this.cardW = cardW;
+        this.cardH = cardH;
+    }
+
     public GridAdapter(boolean showList, ImgUtil.Style style) {
         super(showList ? R.layout.item_list : R.layout.item_grid, new ArrayList<>());
         this.mShowList = showList;
@@ -77,20 +86,16 @@ public class GridAdapter extends BaseQuickAdapter<Movie.Video, BaseViewHolder> {
         helper.setText(R.id.tvName, item.name);
         helper.setText(R.id.tvActor, item.actor);
         ImageView ivThumb = helper.getView(R.id.ivThumb);
-        int newWidth = ImgUtil.defaultWidth;
-        int newHeight = ImgUtil.defaultHeight;
-        if (style != null) {
-            newWidth = defaultWidth;
-            newHeight = (int) (newWidth / style.ratio);
-        }
+        int newWidth = cardW > 0 ? cardW : AutoSizeUtils.mm2px(mContext, ImgUtil.defaultWidth);
+        int newHeight = cardH > 0 ? cardH : AutoSizeUtils.mm2px(mContext, ImgUtil.defaultHeight);
         String pic = item.pic == null ? "" : item.pic.trim();
         if (!TextUtils.isEmpty(pic)) {
             if (ImgUtil.isBase64Image(pic)) {
                 ivThumb.setImageBitmap(ImgUtil.decodeBase64ToBitmap(pic));
             } else {
                 int roundingRadius = AutoSizeUtils.mm2px(mContext, 10);
-                int imageWidth = AutoSizeUtils.mm2px(mContext, newWidth);
-                int imageHeight = AutoSizeUtils.mm2px(mContext, newHeight);
+                int imageWidth = newWidth;
+                int imageHeight = newHeight;
                 if (style != null) {
                     ImgUtil.load(pic, ivThumb, roundingRadius, imageWidth, imageHeight, item.name, ImageView.ScaleType.FIT_XY);
                 } else {
@@ -100,18 +105,24 @@ public class GridAdapter extends BaseQuickAdapter<Movie.Video, BaseViewHolder> {
         } else {
             ivThumb.setImageDrawable(ImgUtil.createTextDrawable(item.name));
         }
-        applyStyleToImage(ivThumb);
+        applyStyleToImage(helper, ivThumb);
     }
 
-    private void applyStyleToImage(final ImageView ivThumb) {
-        if (style != null) {
-            ViewGroup container = (ViewGroup) ivThumb.getParent();
-            int width = defaultWidth;
-            int height = (int) (width / style.ratio);
-            ViewGroup.LayoutParams containerParams = container.getLayoutParams();
-            containerParams.height = AutoSizeUtils.mm2px(mContext, height);
-            containerParams.width = AutoSizeUtils.mm2px(mContext, width);
-            container.setLayoutParams(containerParams);
+    private void applyStyleToImage(BaseViewHolder helper, final ImageView ivThumb) {
+        // 卡片宽度必须等于网格列宽，否则 GridLayoutManager 按列均分、item 却固定更窄，
+        // 会出现列间巨大空隙且整体不居中（用户反馈"类型列表不居中、卡片太小"）。
+        if (cardW <= 0 || cardH <= 0) return;
+        View itemView = helper.itemView;
+        ViewGroup.LayoutParams ilp = itemView.getLayoutParams();
+        if (ilp != null) {
+            ilp.width = cardW;
+            ilp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+            itemView.setLayoutParams(ilp);
         }
+        ViewGroup container = (ViewGroup) ivThumb.getParent();
+        ViewGroup.LayoutParams containerParams = container.getLayoutParams();
+        containerParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        containerParams.height = cardH;
+        container.setLayoutParams(containerParams);
     }
 }

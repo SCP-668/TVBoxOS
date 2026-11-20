@@ -313,6 +313,9 @@ public abstract class BaseLazyFragment extends Fragment implements CustomAdapt {
         return isBaseOnWidth() ? 5 : 6;
     }
 
+    /** 屏幕方向/尺寸变化后由宿主 Activity 调用，各页面自行按当前像素重排（默认无操作） */
+    public void applyResponsiveLayout() { }
+
     /** 当前是否竖屏，委托给 Activity 的 isPortrait()（内部用 super.getResources()，无递归风险） */
     public boolean isPortrait() {
         if (getActivity() instanceof com.github.tvbox.osc.base.BaseActivity)
