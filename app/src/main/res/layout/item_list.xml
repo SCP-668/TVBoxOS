@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:background="@drawable/shape_user_focus"
+    android:background="@drawable/pw_card_selector"
     android:focusable="true">
 
 
@@ -29,7 +29,7 @@
             android:marqueeRepeatLimit="marquee_forever"
             android:padding="@dimen/vs_10"
             android:singleLine="true"
-            android:textColor="@android:color/white"
+            android:textColor="@color/pw_ink"
             android:textSize="@dimen/ts_20" />
 
         <TextView
@@ -42,7 +42,7 @@
             android:marqueeRepeatLimit="marquee_forever"
             android:padding="@dimen/vs_10"
             android:singleLine="true"
-            android:textColor="@android:color/white"
+            android:textColor="@color/pw_ink"
             android:textSize="@dimen/ts_20" />
 
 

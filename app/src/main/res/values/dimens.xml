@@ -8,12 +8,12 @@
     <dimen name="ts_20">20mm</dimen>
     <dimen name="ts_22">22mm</dimen>
     <dimen name="ts_24">24mm</dimen>
-    <dimen name="ts_26">26mm</dimen>
+    <dimen name="ts_26">34mm</dimen>
     <dimen name="ts_28">28mm</dimen>
-    <dimen name="ts_30">30mm</dimen>
+    <dimen name="ts_30">44mm</dimen>
     <dimen name="ts_34">34mm</dimen>
     <dimen name="ts_36">36mm</dimen>
-    <dimen name="ts_40">40mm</dimen>
+    <dimen name="ts_40">46mm</dimen>
     <dimen name="ts_50">50mm</dimen>
     <dimen name="ts_100">100mm</dimen>
 
@@ -97,4 +97,38 @@
     <dimen name="vs_640">640mm</dimen>
     <dimen name="vs_720">720mm</dimen>
     <dimen name="vs_960">960mm</dimen>
+
+    <!-- ===== 清漾 Clearwave 设计 token（横竖屏共用唯一一套） ===== -->
+    <dimen name="vs_16">16mm</dimen>
+    <dimen name="vs_44">44mm</dimen>
+    <dimen name="vs_72">72mm</dimen>
+    <dimen name="vs_78">78mm</dimen>
+    <dimen name="vs_560">560mm</dimen>
+    <dimen name="vs_730">730mm</dimen>
+    <dimen name="vs_900">900mm</dimen>
+    <dimen name="vs_1080">1080mm</dimen>
+    <dimen name="ts_32">32mm</dimen>
+    <!-- 圆角 -->
+    <dimen name="pw_r_xs">8mm</dimen>
+    <dimen name="pw_r_sm">14mm</dimen>
+    <dimen name="pw_r_md">22mm</dimen>
+    <dimen name="pw_r_lg">32mm</dimen>
+    <dimen name="pw_r_pill">60mm</dimen>
+    <!-- 间距 -->
+    <dimen name="pw_pad">24mm</dimen>
+    <dimen name="pw_gap">16mm</dimen>
+    <dimen name="pw_gap_sm">10mm</dimen>
+    <!-- 字号 -->
+    <dimen name="pw_ts_title">52mm</dimen>
+    <dimen name="pw_ts_section">36mm</dimen>
+    <dimen name="pw_ts_body">30mm</dimen>
+    <dimen name="pw_ts_sub">26mm</dimen>
+    <dimen name="pw_ts_caption">22mm</dimen>
+    <!-- 组件尺寸 -->
+    <dimen name="pw_hero_h">380mm</dimen>
+    <dimen name="pw_tabbar_h">110mm</dimen>
+    <dimen name="pw_search_h">70mm</dimen>
+    <dimen name="pw_card_h">96mm</dimen>
+    <dimen name="pw_avatar">80mm</dimen>
+    <dimen name="pw_divider">1mm</dimen>
 </resources>

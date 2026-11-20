@@ -331,6 +331,18 @@ public class HomeActivity extends BaseActivity {
         if (tabHome == null || tabVod == null || tabCollect == null || tabHistory == null || tabSetting == null) {
             return;
         }
+        // 一套响应式布局：底部 Tab 仅竖屏手机显示；横屏 TV 隐藏，用遥控器导航
+        View tabBar = findViewById(R.id.pwTabBar);
+        if (tabBar != null) {
+            boolean portrait = isPortrait();
+            tabBar.setVisibility(portrait ? View.VISIBLE : View.GONE);
+            // 竖屏时内容区底部留出 Tab 高度，避免被遮挡；横屏无 Tab 则不占用
+            if (contentLayout != null) {
+                int padBottom = portrait ? getResources().getDimensionPixelSize(R.dimen.pw_tabbar_h) : 0;
+                contentLayout.setPadding(contentLayout.getPaddingLeft(), contentLayout.getPaddingTop(),
+                        contentLayout.getPaddingRight(), padBottom);
+            }
+        }
         final View[] tabs = {tabHome, tabVod, tabCollect, tabHistory, tabSetting};
         View.OnClickListener listener = new View.OnClickListener() {
             @Override

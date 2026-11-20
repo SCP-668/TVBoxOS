@@ -176,10 +176,21 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
         tvSearch = findViewById(R.id.tvSearch);
         tvSetting = findViewById(R.id.tvSetting);
         tvTransfer = findViewById(R.id.tvTransfer);
-        tvTransfer.setVisibility(ScreenUtils.isTv(mContext) ? View.VISIBLE : View.GONE);
         tvCollect = findViewById(R.id.tvFavorite);
         tvHistory = findViewById(R.id.tvHistory);
         tvPush = findViewById(R.id.tvPush);
+        // 一套响应式布局：竖屏手机隐藏与底部 Tab 重复的入口及传输，横屏 TV 全部保留供遥控器导航
+        if (isPortrait()) {
+            tvHistory.setVisibility(View.GONE);
+            tvCollect.setVisibility(View.GONE);
+            tvSetting.setVisibility(View.GONE);
+            tvTransfer.setVisibility(View.GONE);
+        } else {
+            tvHistory.setVisibility(View.VISIBLE);
+            tvCollect.setVisibility(View.VISIBLE);
+            tvSetting.setVisibility(View.VISIBLE);
+            tvTransfer.setVisibility(ScreenUtils.isTv(mContext) ? View.VISIBLE : View.GONE);
+        }
         tvLive.setOnClickListener(this);
         tvSearch.setOnClickListener(this);
         tvSetting.setOnClickListener(this);
