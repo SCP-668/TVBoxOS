@@ -256,6 +256,12 @@ public class LivePlayActivity extends BaseActivity {
         return R.layout.activity_live_play;
     }
 
+    // 直播播放页：保持全屏沉浸，不显示状态栏
+    @Override
+    protected boolean needFullscreen() {
+        return true;
+    }
+
     @Override
     protected void init() {
         context = this;

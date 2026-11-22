@@ -168,6 +168,12 @@ public class DetailActivity extends BaseActivity {
         return R.layout.activity_detail;
     }
 
+    // 播放页：保持全屏沉浸，不显示状态栏（播放器需要完整画面）
+    @Override
+    protected boolean needFullscreen() {
+        return true;
+    }
+
     @Override
     protected void init() {
         EventBus.getDefault().register(this);

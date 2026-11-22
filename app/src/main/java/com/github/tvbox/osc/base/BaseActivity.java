@@ -12,10 +12,13 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.util.DisplayMetrics;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.PermissionChecker;
+import androidx.core.view.ViewCompat;
 
 import com.github.tvbox.osc.R;
 import com.github.tvbox.osc.callback.EmptyCallback;
@@ -76,8 +79,81 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
         mContext = this;
         initSystemUiListener();
         CutoutUtil.adaptCutoutAboveAndroidP(mContext, true);//设置刘海
+        applyWindowMode();
         AppManager.getInstance().addActivity(this);
         init();
+    }
+
+    /**
+     * 是否需要全屏沉浸（隐藏状态栏+导航栏）。
+     * 默认 false：普通页面显示系统状态栏，并预留顶部安全区，内容不被信号栏遮挡。
+     * 播放类页面覆写返回 true，保持全屏。
+     */
+    protected boolean needFullscreen() {
+        return false;
+    }
+
+    /**
+     * 统一窗口模式入口。所有 onResume / onWindowFocusChanged / 系统栏监听回调都走这里，
+     * 避免"显示状态栏"被 hideSysBar 重新盖上。
+     */
+    protected void applyWindowMode() {
+        if (needFullscreen()) {
+            hideSysBar();
+        } else {
+            showStatusBarWithSafeArea();
+        }
+    }
+
+    /**
+     * 非播放页：显示系统状态栏，透明底色融入主题深蓝紫，并给内容根留 statusBar 高度的安全区。
+     * 用 android.R.id.content（DecorView 的内容容器）而不是具体业务布局，通用且不侵入各页面 XML。
+     */
+    private void showStatusBarWithSafeArea() {
+        Window window = getWindow();
+        if (window == null) return;
+        WindowManager.LayoutParams wlp = window.getAttributes();
+        // 主题 android:windowFullscreen=true 会给 Window 加 FLAG_FULLSCREEN，
+        // 只清 View 的 SYSTEM_UI_FLAG 状态栏仍不显示，必须清 Window flag。
+        wlp.flags &= ~WindowManager.LayoutParams.FLAG_FULLSCREEN;
+        window.setAttributes(wlp);
+        View decor = window.getDecorView();
+        // 清掉全屏标志，状态栏才会真正显示
+        int uiOptions = decor.getSystemUiVisibility();
+        uiOptions &= ~View.SYSTEM_UI_FLAG_FULLSCREEN;
+        uiOptions &= ~View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+        uiOptions &= ~View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+        uiOptions &= ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+        uiOptions &= ~View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+        uiOptions |= View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
+        decor.setSystemUiVisibility(uiOptions);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // 用 super.getResources() 绕开本类重写的 AutoSize 逻辑，避免触发回调链
+            window.setStatusBarColor(super.getResources().getColor(R.color.pw_bg));
+        }
+        // WindowInsets 安全区：把系统栏高度作为 content 的 padding，内容从状态栏下方开始。
+        // ViewCompat 会处理各 API 版本差异；仅设置一次，避免重复叠加 padding。
+        View content = decor.findViewById(android.R.id.content);
+        if (content != null && content.getTag(R.id.pw_statusbar_applied) == null) {
+            final int baseLeft = content.getPaddingLeft();
+            final int baseRight = content.getPaddingRight();
+            final int baseTop = content.getPaddingTop();
+            final int baseBottom = content.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(content, (v, insets) -> {
+                // 用兼容旧版 core 的 API（appcompat 1.3.0 传递的 core 可能 < 1.5，
+                // 不支持 WindowInsetsCompat.Type.systemBars()）
+                int barTop = insets.getSystemWindowInsetTop();
+                int barBottom = insets.getSystemWindowInsetBottom();
+                int barLeft = insets.getSystemWindowInsetLeft();
+                int barRight = insets.getSystemWindowInsetRight();
+                int bottom = needFullscreen() ? 0 : barBottom;
+                v.setPadding(baseLeft + barLeft, baseTop + barTop,
+                        baseRight + barRight, baseBottom + bottom);
+                return insets;
+            });
+            ViewCompat.requestApplyInsets(content);
+            content.setTag(R.id.pw_statusbar_applied, Boolean.TRUE);
+        }
     }
 
     @Override
@@ -99,7 +175,7 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
     @Override
     protected void onResume() {
         super.onResume();
-        hideSysBar();
+        applyWindowMode();
         changeWallpaper(false);
         if (shouldRefreshAutoSize()) {
             refreshAutoSize();
@@ -108,6 +184,13 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
     }
 
     public void hideSysBar() {
+        // 播放页需要真全屏：恢复 Window 的 FLAG_FULLSCREEN（普通页会清掉）
+        Window window = getWindow();
+        if (window != null) {
+            WindowManager.LayoutParams wlp = window.getAttributes();
+            wlp.flags |= WindowManager.LayoutParams.FLAG_FULLSCREEN;
+            window.setAttributes(wlp);
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
             uiOptions |= View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
@@ -126,10 +209,13 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
             decorView.setOnSystemUiVisibilityChangeListener(new View.OnSystemUiVisibilityChangeListener() {
                 @Override
                 public void onSystemUiVisibilityChange(int visibility) {
-                    int hiddenBars = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN;
-                    if ((visibility & hiddenBars) != hiddenBars) {
-                        decorView.removeCallbacks(hideSysBarRunnable);
-                        decorView.postDelayed(hideSysBarRunnable, 300);
+                    // 仅全屏页需要在系统栏被唤出后重新隐藏；普通页保持状态栏显示，不做处理
+                    if (needFullscreen()) {
+                        int hiddenBars = View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_FULLSCREEN;
+                        if ((visibility & hiddenBars) != hiddenBars) {
+                            decorView.removeCallbacks(hideSysBarRunnable);
+                            decorView.postDelayed(hideSysBarRunnable, 300);
+                        }
                     }
                 }
             });
@@ -147,7 +233,7 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
-            hideSysBar();
+            applyWindowMode();
             if (shouldRefreshAutoSize()) {
                 scheduleRefreshAutoSize();
             }
