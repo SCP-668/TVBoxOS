@@ -162,7 +162,8 @@ public class FastSearchActivity extends BaseActivity {
         });
 
         mGridView.setHasFixedSize(true);
-        mGridView.setLayoutManager(new V7GridLayoutManager(this.mContext, 4));
+        // 竖屏 2 列、横屏沿用 gridSpanCount；卡片尺寸在 applyResponsiveLayout 里按实测列宽算
+        mGridView.setLayoutManager(new V7GridLayoutManager(this.mContext, searchSpanCount()));
 
         searchAdapter = new FastSearchAdapter();
         mGridView.setAdapter(searchAdapter);
@@ -194,7 +195,7 @@ public class FastSearchActivity extends BaseActivity {
         });
 
 
-        mGridViewFilter.setLayoutManager(new V7GridLayoutManager(this.mContext, 4));
+        mGridViewFilter.setLayoutManager(new V7GridLayoutManager(this.mContext, searchSpanCount()));
         searchAdapterFilter = new FastSearchAdapter();
         mGridViewFilter.setAdapter(searchAdapterFilter);
         mGridViewFilter.setOnItemListener(new TvRecyclerView.OnItemListener() {
@@ -238,6 +239,56 @@ public class FastSearchActivity extends BaseActivity {
             }
         });
         searchWordAdapter.setNewData(new ArrayList<>());
+
+        // 结果网格按当前屏幕像素重排（竖屏 2 列、卡片按实测列宽），避免写死 4 列 + 固定 mm 尺寸导致重叠错位
+        applyResponsiveLayout();
+    }
+
+    /** 竖屏 2 列、横屏沿用已有的列数算法；避免竖屏 4 列把卡片挤得重叠 */
+    private int searchSpanCount() {
+        return isPortrait() ? 2 : gridSpanCount();
+    }
+
+    /**
+     * 搜索结果卡片按网格实测列宽计算，撑满每一列并居中。
+     * 两个网格（主结果 + 筛选结果）共用同一套尺寸。
+     */
+    private void applyResponsiveLayout() {
+        int w = getResources().getDisplayMetrics().widthPixels;
+        int h = getResources().getDisplayMetrics().heightPixels;
+        final int shortSide = Math.min(w, h);
+        final int pad = Math.round(shortSide * 0.025f);
+        final int gap = Math.round(shortSide * 0.022f);
+        mGridView.setPadding(pad, pad, pad, pad);
+        mGridViewFilter.setPadding(pad, pad, pad, pad);
+        mGridView.setSpacingWithMargins(gap, gap);
+        mGridViewFilter.setSpacingWithMargins(gap, gap);
+        Runnable apply = () -> {
+            int span = searchSpanCount();
+            int viewW = mGridView.getWidth() > 0 ? mGridView.getWidth()
+                    : (mGridViewFilter.getWidth() > 0 ? mGridViewFilter.getWidth() : w);
+            int cell = Math.max(1, (viewW - pad * 2 - gap * (span - 1)) / span);
+            int height = Math.round(cell / (214f / 280f));
+            if (searchAdapter != null) {
+                searchAdapter.setMetrics(cell, height, shortSide);
+                searchAdapter.notifyDataSetChanged();
+            }
+            if (searchAdapterFilter != null) {
+                searchAdapterFilter.setMetrics(cell, height, shortSide);
+                searchAdapterFilter.notifyDataSetChanged();
+            }
+        };
+        mGridView.post(apply);
+        mGridViewFilter.post(apply);
+    }
+
+    @Override
+    public void onConfigurationChanged(android.content.res.Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        int span = searchSpanCount();
+        mGridView.setLayoutManager(new V7GridLayoutManager(this.mContext, span));
+        mGridViewFilter.setLayoutManager(new V7GridLayoutManager(this.mContext, span));
+        applyResponsiveLayout();
     }
 
     private void setPosterFocusScale(View itemView, boolean focused) {

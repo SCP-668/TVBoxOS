@@ -69,6 +69,8 @@ import java.util.List;
  * @description:
  */
 public class UserFragment extends BaseLazyFragment implements View.OnClickListener {
+    /** 竖屏推荐卡片海报高宽比（高=宽×此值），接近标准海报 2:3，避免细长 */
+    private static final float PORTRAIT_POSTER_RATIO = 1.3f;
     private LinearLayout tvLive;
     private LinearLayout tvSearch;
     private LinearLayout tvSetting;
@@ -141,8 +143,10 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
                 ViewGroup.MarginLayoutParams clp = (ViewGroup.MarginLayoutParams) card.getLayoutParams();
                 clp.setMargins(gap, gap, gap, gap);
                 card.setLayoutParams(clp);
-                // 竖屏是窄卡：图标在上、文字在下；横屏是大宽卡：图标在左、文字在右，避免中间留一片空白
-                card.setOrientation(portrait ? LinearLayout.VERTICAL : LinearLayout.HORIZONTAL);
+                // 横竖屏统一为「图标在上、文字在下、整体严格居中」：
+                // 之前横屏改成图标左文字右并给 label 加 leftMargin，配合 XML 里 icon 的
+                // center_horizontal，旋转时序不同就会错位，看起来"样式错乱"。统一竖排居中后不再分叉。
+                card.setOrientation(LinearLayout.VERTICAL);
                 card.setGravity(Gravity.CENTER);
                 ImageView icon = null;
                 TextView label = null;
@@ -160,13 +164,8 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
                 if (label != null) {
                     label.setTextSize(TypedValue.COMPLEX_UNIT_PX, labelSize);
                     ViewGroup.MarginLayoutParams llp = (ViewGroup.MarginLayoutParams) label.getLayoutParams();
-                    if (portrait) {
-                        llp.topMargin = Math.round(shortSide * 0.008f);
-                        llp.leftMargin = 0;
-                    } else {
-                        llp.topMargin = 0;
-                        llp.leftMargin = gap;
-                    }
+                    llp.topMargin = Math.round(shortSide * 0.008f);
+                    llp.leftMargin = 0;
                     label.setLayoutParams(llp);
                 }
             }
@@ -190,10 +189,11 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
         tvHotList.setSpacingWithMargins(gap, gap);
 
         if (portrait) {
-            // 竖屏：两列竖滑网格，把整屏高度用起来
+            // 竖屏：两列网格。海报比例统一 1:1.3（接近标准海报 2:3），
+            // 之前 1.42 太高、加上横切竖时 tvHotList 高度残留，卡片被拉得细长。
             tvHotList.setLayoutManager(new V7GridLayoutManager(mContext, 2));
             int itemW = Math.max(1, (screenW - padH * 2 - gap) / 2);
-            int itemH = Math.round(itemW * 1.42f);
+            int itemH = Math.round(itemW * PORTRAIT_POSTER_RATIO);
             homeHotVodAdapter.setMetrics(true, itemW, itemH, shortSide);
         } else {
             // 横屏：一行横滑，卡片高度吃满列表高度
@@ -209,7 +209,7 @@ public class UserFragment extends BaseLazyFragment implements View.OnClickListen
             if (getView() == null || tvHotList.getHeight() <= 0) return;
             if (isPortrait()) {
                 int itemW = Math.max(1, (tvHotList.getWidth() - gap) / 2);
-                homeHotVodAdapter.setMetrics(true, itemW, Math.round(itemW * 1.42f), shortSide);
+                homeHotVodAdapter.setMetrics(true, itemW, Math.round(itemW * PORTRAIT_POSTER_RATIO), shortSide);
             } else {
                 int itemH = Math.max(1, tvHotList.getHeight() - gap);
                 homeHotVodAdapter.setMetrics(false, Math.round(itemH * 0.70f), itemH, shortSide);

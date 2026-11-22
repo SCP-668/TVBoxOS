@@ -105,10 +105,13 @@ public class GridFilterDialog extends BaseDialog {
         WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
         layoutParams.gravity = Gravity.BOTTOM;
         layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
-        layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
-        layoutParams.dimAmount = 0f;
+        // 面板高度自适应内容（wrap_content），不再铺满整屏盖住底部导航；
+        // dimAmount 加暗背景，把筛选面板从海报里凸显出来，文字看得清。
+        layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+        layoutParams.dimAmount = 0.62f;
         getWindow().getDecorView().setPadding(0, 0, 0, 0);
         getWindow().setAttributes(layoutParams);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
 //        requestFirstFilterFocus();
     }
 

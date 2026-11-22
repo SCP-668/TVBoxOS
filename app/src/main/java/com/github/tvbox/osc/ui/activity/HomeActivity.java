@@ -448,14 +448,16 @@ public class HomeActivity extends BaseActivity {
 
         if (topLayout != null) {
             ViewGroup.LayoutParams tlp = topLayout.getLayoutParams();
-            // Hero 只放标题 + 一句话，竖屏更紧凑（把高度留给内容），横屏稍高
-            heroHeightPx = Math.round(screenH * (portrait ? 0.128f : 0.215f));
+            // Hero 只放标题行 + 副标题两行，高度按短边统一计算（横竖屏用同一基准，观感一致）。
+            // 之前横屏按 screenH*0.215 写死，内容 gravity=bottom 导致顶部空出一大片纯色区域。
+            // 现按内容所需高度（标题字号+副标题字号+行间距+上下 padding）贴合，消除顶部空白。
+            heroHeightPx = Math.round(shortSide * 0.115f);
             if (tlp != null) {
                 tlp.height = heroHeightPx;
                 topLayout.setLayoutParams(tlp);
             }
             int padH = Math.round(shortSide * 0.028f);
-            topLayout.setPadding(padH, Math.round(screenH * 0.018f), padH, 0);
+            topLayout.setPadding(padH, Math.round(shortSide * 0.014f), padH, Math.round(shortSide * 0.014f));
         }
 
         refreshTopInfoTextSize();

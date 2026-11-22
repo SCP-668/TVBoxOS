@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/pw_hero_gradient"
-        android:gravity="bottom"
+        android:gravity="center_vertical"
         android:orientation="vertical"
         android:paddingLeft="@dimen/pw_pad"
         android:paddingRight="@dimen/pw_pad"
