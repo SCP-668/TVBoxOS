@@ -6,6 +6,7 @@
     android:focusable="true"
     android:padding="@dimen/vs_1">
 
+    <!-- 海报容器：尺寸由 GridAdapter 按列宽动态写入（宽度 MATCH_PARENT / 高度为 cardH） -->
     <FrameLayout
         android:layout_width="@dimen/vs_214"
         android:layout_height="@dimen/vs_280">
@@ -17,20 +18,22 @@
             android:padding="@dimen/vs_1"
             android:scaleType="fitXY" />
 
+        <!-- 右上角信息角标：年份 / 地区 / 语言，纵向紧凑排列，不再横铺遮挡海报 -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="top|right"
             android:layout_marginLeft="@dimen/vs_5"
             android:layout_marginTop="@dimen/vs_5"
             android:layout_marginRight="@dimen/vs_5"
-            android:orientation="horizontal">
+            android:gravity="right"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tvYear"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="@dimen/vs_5"
-                android:layout_marginRight="@dimen/vs_5"
+                android:layout_marginBottom="@dimen/vs_2"
                 android:background="@drawable/shape_thumb_bottom_name"
                 android:ellipsize="end"
                 android:gravity="center"
@@ -44,8 +47,7 @@
                 android:id="@+id/tvArea"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="@dimen/vs_5"
-                android:layout_marginRight="@dimen/vs_5"
+                android:layout_marginBottom="@dimen/vs_2"
                 android:background="@drawable/shape_thumb_lang"
                 android:ellipsize="end"
                 android:gravity="center"
@@ -59,8 +61,6 @@
                 android:id="@+id/tvLang"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="@dimen/vs_5"
-                android:layout_marginRight="@dimen/vs_5"
                 android:background="@drawable/shape_thumb_year"
                 android:ellipsize="end"
                 android:gravity="center"
@@ -69,10 +69,9 @@
                 android:singleLine="true"
                 android:textColor="@color/pw_ink"
                 android:textSize="@dimen/ts_20" />
-
         </LinearLayout>
 
-
+        <!-- 底部标题条：备注小标签 + 片名，去掉多余的演员行，保持简洁 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -87,7 +86,7 @@
                 android:layout_gravity="bottom"
                 android:layout_marginLeft="@dimen/vs_5"
                 android:layout_marginRight="@dimen/vs_5"
-                android:layout_marginBottom="@dimen/vs_5"
+                android:layout_marginBottom="@dimen/vs_4"
                 android:background="@drawable/shape_thumb_note"
                 android:ellipsize="end"
                 android:gravity="center"
@@ -124,13 +123,14 @@
                 android:textSize="@dimen/ts_16"
                 android:visibility="gone" />
         </LinearLayout>
-        
+
+        <!-- 删除模式遮罩（收藏页长按删除），保留 -->
         <FrameLayout
             android:id="@+id/delFrameLayout"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@drawable/shape_user_delete"
             android:layout_gravity="center"
+            android:background="@drawable/shape_user_delete"
             android:visibility="gone">
 
             <ImageView
@@ -141,6 +141,6 @@
                 android:layout_marginBottom="@dimen/vs_20"
                 android:src="@drawable/icon_delete" />
         </FrameLayout>
-        
+
     </FrameLayout>
 </FrameLayout>

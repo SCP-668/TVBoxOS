@@ -328,14 +328,14 @@ public class HomeActivity extends BaseActivity {
     private void initBottomTabs() {
         View tabHome = findViewById(R.id.pwTabHome);
         View tabVod = findViewById(R.id.pwTabVod);
-        View tabCollect = findViewById(R.id.pwTabCollect);
+        View tabLive = findViewById(R.id.pwTabLive);
         View tabHistory = findViewById(R.id.pwTabHistory);
         View tabSetting = findViewById(R.id.pwTabSetting);
-        if (tabHome == null || tabVod == null || tabCollect == null || tabHistory == null || tabSetting == null) {
+        if (tabHome == null || tabVod == null || tabLive == null || tabHistory == null || tabSetting == null) {
             return;
         }
         tabBar = findViewById(R.id.pwTabBar);
-        final View[] tabs = {tabHome, tabVod, tabCollect, tabHistory, tabSetting};
+        final View[] tabs = {tabHome, tabVod, tabLive, tabHistory, tabSetting};
         for (int i = 0; i < tabs.length; i++) {
             tabItems[i] = tabs[i];
             if (tabs[i] instanceof ViewGroup) {
@@ -366,9 +366,9 @@ public class HomeActivity extends BaseActivity {
                     } else if (mGridView != null) {
                         mGridView.requestFocus();
                     }
-                } else if (id == R.id.pwTabCollect) {
+                } else if (id == R.id.pwTabLive) {
                     selectTab(tabs, 2);
-                    jumpActivity(com.github.tvbox.osc.ui.activity.CollectActivity.class);
+                    jumpActivity(LivePlayActivity.class);
                 } else if (id == R.id.pwTabHistory) {
                     selectTab(tabs, 3);
                     jumpActivity(com.github.tvbox.osc.ui.activity.HistoryActivity.class);

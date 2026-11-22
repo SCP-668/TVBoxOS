@@ -12,6 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/pw_hero_gradient"
+        android:gravity="bottom"
         android:orientation="vertical"
         android:paddingLeft="@dimen/pw_pad"
         android:paddingRight="@dimen/pw_pad"
@@ -19,10 +20,11 @@
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
+        <!-- 标题行：主标题占据主体，日期作为右侧小字眉题，二者底部基线对齐 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
+            android:gravity="bottom"
             android:orientation="horizontal">
 
             <TextView
@@ -33,7 +35,8 @@
                 android:ellipsize="end"
                 android:focusable="false"
                 android:focusableInTouchMode="false"
-                android:gravity="left|center_vertical"
+                android:gravity="left|bottom"
+                android:includeFontPadding="false"
                 android:maxLines="1"
                 android:singleLine="true"
                 android:text="@string/app_name"
@@ -50,7 +53,7 @@
                 android:layout_marginLeft="@dimen/vs_12"
                 android:focusable="false"
                 android:focusableInTouchMode="false"
-                android:gravity="right|center_vertical"
+                android:gravity="right|bottom"
                 android:includeFontPadding="false"
                 android:maxLines="1"
                 android:singleLine="true"
@@ -60,12 +63,15 @@
                 tools:text="2026/06/16  周二  15:01" />
         </LinearLayout>
 
+        <!-- 副标题：与主标题形成两行信息层级，topMargin 由 HomeActivity 动态计算 -->
         <TextView
             android:id="@+id/tvSlogan"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:focusable="false"
+            android:gravity="left|top"
+            android:includeFontPadding="false"
             android:maxLines="1"
             android:singleLine="true"
             android:text="发现好片，一触即达"
@@ -85,7 +91,7 @@
         app:layout_constraintBottom_toTopOf="@+id/pwTabBar"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/topLayout">
+        app:layout_constraintTop_toBottomOf="@id/topLayout">
 
         <com.owen.tvrecyclerview.widget.TvRecyclerView
             android:id="@+id/mGridView"
@@ -102,12 +108,12 @@
             android:layout_weight="1" />
     </LinearLayout>
 
-    <!-- 全局底部 Tab 栏：图标/文字尺寸由 HomeActivity 按屏幕像素统一计算 -->
+    <!-- 底部主导航 -->
     <LinearLayout
         android:id="@+id/pwTabBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/pw_tabbar_bg"
+        android:layout_height="@dimen/pw_tabbar_h"
+        android:background="@color/pw_bg_alt"
         android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
@@ -119,13 +125,13 @@
         </LinearLayout>
 
         <LinearLayout android:id="@+id/pwTabVod" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_tab_item_bg">
-            <ImageView android:layout_width="@dimen/vs_50" android:layout_height="@dimen/vs_50" android:layout_gravity="center_horizontal" android:src="@drawable/pw_ic_grid" app:tint="@color/pw_icon_tint" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="分类" android:textColor="@color/pw_tab_tint" android:textSize="@dimen/pw_ts_caption" />
+            <ImageView android:layout_width="@dimen/vs_50" android:layout_height="@dimen/vs_50" android:layout_gravity="center_horizontal" android:src="@drawable/pw_ic_vod" app:tint="@color/pw_icon_tint" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="点播" android:textColor="@color/pw_tab_tint" android:textSize="@dimen/pw_ts_caption" />
         </LinearLayout>
 
-        <LinearLayout android:id="@+id/pwTabCollect" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_tab_item_bg">
-            <ImageView android:layout_width="@dimen/vs_50" android:layout_height="@dimen/vs_50" android:layout_gravity="center_horizontal" android:src="@drawable/pw_ic_collect" app:tint="@color/pw_icon_tint" />
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="收藏" android:textColor="@color/pw_tab_tint" android:textSize="@dimen/pw_ts_caption" />
+        <LinearLayout android:id="@+id/pwTabLive" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_tab_item_bg">
+            <ImageView android:layout_width="@dimen/vs_50" android:layout_height="@dimen/vs_50" android:layout_gravity="center_horizontal" android:src="@drawable/pw_ic_live" app:tint="@color/pw_icon_tint" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="直播" android:textColor="@color/pw_tab_tint" android:textSize="@dimen/pw_ts_caption" />
         </LinearLayout>
 
         <LinearLayout android:id="@+id/pwTabHistory" android:layout_width="@dimen/vs_0" android:layout_height="match_parent" android:layout_weight="1" android:gravity="center" android:orientation="vertical" android:focusable="true" android:clickable="true" android:background="@drawable/pw_tab_item_bg">
