@@ -46,19 +46,18 @@
             app:tv_verticalSpacingWithMargins="@dimen/vs_5" />
     </LinearLayout>
 
-    <!-- 词列表区（竖屏改横向滚动条，固定高度）
-         修复第五项重叠：词项 focus 会 1.05 倍放大 + 描边，之前 clipChildren=false
-         且下方结果区无间距，放大后的选中词溢出盖住卡片顶部。改为裁剪溢出 + 加大底部留白。 -->
+    <!-- 站源筛选词：横向滚动条，一排列出所有词。
+         不裁剪（clipChildren=false）以便选中词放大时完整显示；下方 llLayout 保留顶部间距，
+         横向单行不会向下溢出盖住卡片。 -->
     <LinearLayout
         android:id="@+id/llWord"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/vs_120"
-        android:clipChildren="true"
-        android:clipToPadding="true"
+        android:layout_height="@dimen/vs_100"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:orientation="horizontal"
         android:paddingLeft="@dimen/vs_20"
-        android:paddingTop="@dimen/vs_10"
-        android:paddingBottom="@dimen/vs_20">
+        android:paddingBottom="@dimen/vs_10">
 
         <com.owen.tvrecyclerview.widget.TvRecyclerView
             android:id="@+id/mGridViewWord"

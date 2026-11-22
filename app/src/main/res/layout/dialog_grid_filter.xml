@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/root"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:id="@+id/filterRoot"
@@ -10,7 +10,23 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="@drawable/shape_dialog_filter_bg"
+        android:clipChildren="false"
         android:orientation="vertical"
-        android:padding="@dimen/vs_20" />
+        android:padding="@dimen/vs_20">
+
+        <!-- 明确的关闭出口：TV 遥控器/鼠标点击均可关闭筛选面板 -->
+        <TextView
+            android:id="@+id/tvCloseFilter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/vs_10"
+            android:background="@drawable/pw_card"
+            android:gravity="center"
+            android:padding="@dimen/vs_10"
+            android:text="✕ 关闭筛选"
+            android:textColor="@color/pw_blue"
+            android:textSize="@dimen/ts_22" />
+
+    </LinearLayout>
 
 </FrameLayout>

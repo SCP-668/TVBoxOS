@@ -34,6 +34,17 @@ public class GridFilterDialog extends BaseDialog {
         setContentView(R.layout.dialog_grid_filter);
         filterRoot = findViewById(R.id.filterRoot);
 
+        // 显式关闭出口：点击"关闭筛选"直接 dismiss（TV 遥控器/鼠标均可达）
+        View closeBtn = findViewById(R.id.tvCloseFilter);
+        if (closeBtn != null) {
+            closeBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dismiss();
+                }
+            });
+        }
+
         bindOutsideTouchDismiss();
     }
 
@@ -105,14 +116,21 @@ public class GridFilterDialog extends BaseDialog {
         WindowManager.LayoutParams layoutParams = getWindow().getAttributes();
         layoutParams.gravity = Gravity.BOTTOM;
         layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
-        // 面板高度自适应内容（wrap_content），不再铺满整屏盖住底部导航；
-        // dimAmount 加暗背景，把筛选面板从海报里凸显出来，文字看得清。
-        layoutParams.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+        // 遮罩铺满全屏（MATCH_PARENT），这样点击面板外的暗色区域能被 root 捕获并关闭；
+        // 之前用 WRAP_CONTENT 贴底导致遮罩没有可点区域、面板退不出去。
+        // 面板本身仍由 filterRoot 的 layout_gravity="bottom" 贴底、高度自适应内容。
+        layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
         layoutParams.dimAmount = 0.62f;
         getWindow().getDecorView().setPadding(0, 0, 0, 0);
         getWindow().setAttributes(layoutParams);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
 //        requestFirstFilterFocus();
+    }
+
+    @Override
+    public void onBackPressed() {
+        // 遥控器返回键明确关闭筛选面板，避免筛选界面退不出去
+        dismiss();
     }
 
     private void bindOutsideTouchDismiss() {

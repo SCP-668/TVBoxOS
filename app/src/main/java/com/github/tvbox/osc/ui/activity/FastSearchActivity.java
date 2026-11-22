@@ -128,7 +128,9 @@ public class FastSearchActivity extends BaseActivity {
         mGridViewFilter = findViewById(R.id.mGridViewFilter);
 
         mGridViewWord.setHasFixedSize(true);
-        mGridViewWord.setLayoutManager(new V7LinearLayoutManager(this.mContext, 1, false));
+        // 站源筛选词改为横向滚动条：纵向时每个词占满一行、被容器高度裁切，只显示 1~2 个词。
+        // 横向后多个词一排列出，配合 item 的 wrap_content 宽度可完整显示所有筛选词。
+        mGridViewWord.setLayoutManager(new V7LinearLayoutManager(this.mContext, 0, false));
         spListAdapter = new FastListAdapter();
         mGridViewWord.setAdapter(spListAdapter);
 
