@@ -18,7 +18,6 @@ import android.view.WindowManager;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.PermissionChecker;
-import androidx.core.view.ViewCompat;
 
 import com.github.tvbox.osc.R;
 import com.github.tvbox.osc.callback.EmptyCallback;
@@ -122,7 +121,10 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
         int uiOptions = decor.getSystemUiVisibility();
         uiOptions &= ~View.SYSTEM_UI_FLAG_FULLSCREEN;
         uiOptions &= ~View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
-        uiOptions &= ~View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+        // 统一用一套机制：保留 LAYOUT_FULLSCREEN，让内容延伸到状态栏下方，
+        // 由本方法统一加且只加一次 paddingTop。若清掉此标志，系统会自动避开状态栏
+        // （自己加一次 padding），再叠加我们手动的一次就会出现双倍留白。
+        uiOptions |= View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
         uiOptions &= ~View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
         uiOptions &= ~View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
         uiOptions |= View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
@@ -131,34 +133,22 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
             // 用 super.getResources() 绕开本类重写的 AutoSize 逻辑，避免触发回调链
             window.setStatusBarColor(super.getResources().getColor(R.color.pw_bg));
         }
-        // WindowInsets 安全区：把系统栏高度作为 content 的 padding，内容从状态栏下方开始。
-        // ViewCompat 会处理各 API 版本差异；仅设置一次，避免重复叠加 padding。
+        // 状态栏安全区：把状态栏物理高度作为 content 的顶部 padding，内容从状态栏下方开始。
+        // 只设置一次（用 tag 标记），避免 onResume/onFocus 反复调用时重复叠加。
         View content = decor.findViewById(android.R.id.content);
         if (content != null && content.getTag(R.id.pw_statusbar_applied) == null) {
+            final int barHeight = getStatusBarHeightPx();
+            // 基准 padding 只读取一次：onResume/onFocus 会反复走本方法，靠 tag 保证只设一次，
+            // 绝不从"已加过 padding 的 content"再读，避免逐次累加导致顶部越撑越高。
             final int baseLeft = content.getPaddingLeft();
             final int baseRight = content.getPaddingRight();
             final int baseTop = content.getPaddingTop();
             final int baseBottom = content.getPaddingBottom();
-            // 主动读取系统状态栏物理高度(px)作为兜底：
-            // 部分页面(如搜索页)首次 WindowInsets 回调时 top 为 0(全屏主题过渡/软键盘时机)，
-            // 只依赖回调会导致状态栏显示后内容仍贴顶。用 max(兜底,insets) 保证任何页面都有安全区。
-            final int statusBarFallback = getStatusBarHeightPx();
-            // 立即设置一次，不等待 insets 回调
-            content.setPadding(baseLeft, baseTop + statusBarFallback,
-                    baseRight, baseBottom);
-            ViewCompat.setOnApplyWindowInsetsListener(content, (v, insets) -> {
-                // 用兼容旧版 core 的 API（appcompat 1.3.0 传递的 core 可能 < 1.5，
-                // 不支持 WindowInsetsCompat.Type.systemBars()）
-                int barTop = Math.max(insets.getSystemWindowInsetTop(), statusBarFallback);
-                int barBottom = insets.getSystemWindowInsetBottom();
-                int barLeft = insets.getSystemWindowInsetLeft();
-                int barRight = insets.getSystemWindowInsetRight();
-                int bottom = needFullscreen() ? 0 : barBottom;
-                v.setPadding(baseLeft + barLeft, baseTop + barTop,
-                        baseRight + barRight, baseBottom + bottom);
-                return insets;
-            });
-            ViewCompat.requestApplyInsets(content);
+            // 顶部安全区只用状态栏物理高度(px)，一次性加足。
+            // 不再用 insets.getSystemWindowInsetTop()：部分真机该值经过 AutoSize density
+            // 放大，取 max 后会撑出双倍空白（用户反馈的信号栏过高）；固定物理高度最可控。
+            // 左右/底部系统栏(insets)不涉及此问题，仍交给系统默认处理，这里只动 top。
+            content.setPadding(baseLeft, baseTop + barHeight, baseRight, baseBottom);
             content.setTag(R.id.pw_statusbar_applied, Boolean.TRUE);
         }
     }

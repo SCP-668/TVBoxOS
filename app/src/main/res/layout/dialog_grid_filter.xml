@@ -44,13 +44,12 @@
             android:textColor="@color/pw_blue"
             android:textSize="@dimen/ts_22" />
 
-        <!-- 筛选行容器：内容多时可滚动，避免小屏/竖屏被裁切 -->
+        <!-- 筛选行容器：高度按内容自适应(wrap_content)，不撑满、不留大片空白。
+             内容确实超出屏幕时才滚动，用 maxHeight 约束避免小屏溢出。 -->
         <ScrollView
             android:id="@+id/filterScroll"
             android:layout_width="match_parent"
-            android:layout_height="@dimen/vs_0"
-            android:layout_weight="1"
-            android:fillViewport="true"
+            android:layout_height="wrap_content"
             android:scrollbars="none">
 
             <LinearLayout

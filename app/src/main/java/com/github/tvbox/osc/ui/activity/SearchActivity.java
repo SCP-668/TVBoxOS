@@ -4,14 +4,17 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -124,6 +127,18 @@ public class SearchActivity extends BaseActivity {
     private boolean aggregateSearchMode;
     private boolean aggregateSearchModeInited = false;
 
+    // 搜索页专用响应式尺寸（物理 px），只作用于本页，不牵连其它模块
+    private View searchRoot;
+    private View searchTop;
+    private View searchActions;
+    private int searchTextPx;
+    private int searchChipTextPx;
+    private int searchChipMinWidthPx;
+    private int searchChipPaddingPx;
+    private int searchHistoryItemHeightPx;
+    private int searchHistoryMinWidthPx;
+    private int searchHistoryMarginPx;
+
     @Override
     protected int getLayoutResID() {
         return R.layout.activity_search;
@@ -187,6 +202,10 @@ public class SearchActivity extends BaseActivity {
         wordAdapter = new PinyinAdapter();
         hotWordAdapter = new PinyinAdapter();
         wordsSwitch = findViewById(R.id.wordSwitch);
+        searchRoot = findViewById(R.id.searchRoot);
+        searchTop = findViewById(R.id.searchTop);
+        searchActions = findViewById(R.id.searchActions);
+        applyResponsiveSearchLayout();
         applySearchWordMode();
         wordAdapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
             @Override
@@ -377,6 +396,129 @@ public class SearchActivity extends BaseActivity {
         });
     }
 
+    private static void setHeightPx(View view, int heightPx) {
+        if (view == null) return;
+        ViewGroup.LayoutParams lp = view.getLayoutParams();
+        if (lp == null) return;
+        lp.height = heightPx;
+        view.setLayoutParams(lp);
+    }
+
+    private static void setWidthPx(View view, int widthPx) {
+        if (view == null) return;
+        ViewGroup.LayoutParams lp = view.getLayoutParams();
+        if (lp == null) return;
+        lp.width = widthPx;
+        view.setLayoutParams(lp);
+    }
+
+    private static void setTopMarginPx(View view, int marginPx) {
+        if (view == null) return;
+        ViewGroup.LayoutParams lp = view.getLayoutParams();
+        if (lp instanceof ViewGroup.MarginLayoutParams) {
+            ((ViewGroup.MarginLayoutParams) lp).topMargin = marginPx;
+            view.setLayoutParams(lp);
+        }
+    }
+
+    private static void setTextSizePx(TextView view, int textPx) {
+        if (view != null && textPx > 0) {
+            view.setTextSize(TypedValue.COMPLEX_UNIT_PX, textPx);
+        }
+    }
+
+    /**
+     * 搜索页响应式尺寸：按当前窗口短边计算物理 px。
+     * 竖屏把输入区、键盘、热词/历史放大并拉开间距；横屏保持紧凑，避免撑爆结果列表。
+     */
+    private void applyResponsiveSearchLayout() {
+        if (searchRoot == null) return;
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        final int shortSide = Math.min(dm.widthPixels, dm.heightPixels);
+        if (shortSide <= 0) return;
+        final boolean portrait = isPortrait();
+
+        int pad = Math.round(shortSide * (portrait ? 0.035f : 0.025f));
+        int gap = Math.round(shortSide * (portrait ? 0.020f : 0.014f));
+        int fieldH = Math.round(shortSide * (portrait ? 0.080f : 0.070f));
+        searchTextPx = Math.round(shortSide * (portrait ? 0.026f : 0.021f));
+        searchChipTextPx = Math.round(shortSide * (portrait ? 0.025f : 0.021f));
+        int wordRowH = Math.round(shortSide * (portrait ? 0.115f : 0.085f));
+        int switchW = Math.round(shortSide * (portrait ? 0.26f : 0.22f));
+        searchChipMinWidthPx = Math.round(shortSide * (portrait ? 0.14f : 0.11f));
+        searchChipPaddingPx = Math.round(shortSide * (portrait ? 0.018f : 0.012f));
+        searchHistoryItemHeightPx = Math.round(shortSide * (portrait ? 0.078f : 0.060f));
+        searchHistoryMinWidthPx = Math.round(shortSide * (portrait ? 0.14f : 0.10f));
+        searchHistoryMarginPx = Math.round(shortSide * (portrait ? 0.010f : 0.006f));
+
+        searchRoot.setPadding(pad, pad, pad, pad);
+        setTopMarginPx(searchTop, gap);
+        setHeightPx(tvSearchCheckboxBtn, fieldH);
+        setHeightPx(etSearch, fieldH);
+        setHeightPx(searchActions, fieldH);
+        setTopMarginPx(etSearch, gap);
+        setTopMarginPx(searchActions, gap);
+        setTextSizePx(tvSearchCheckboxBtn, searchTextPx);
+        setTextSizePx(etSearch, searchTextPx);
+        setTextSizePx(tvSearch, searchTextPx);
+        setTextSizePx(tvClear, searchTextPx);
+        etSearch.setPadding(pad, 0, pad, 0);
+        if (searchActions instanceof ViewGroup && ((ViewGroup) searchActions).getChildCount() > 1) {
+            setWidthPx(((ViewGroup) searchActions).getChildAt(1), gap);
+        }
+
+        setHeightPx(keyboard, ViewGroup.LayoutParams.WRAP_CONTENT);
+        setTopMarginPx(keyboard, portrait ? Math.round(gap * 1.4f) : gap);
+        keyboard.post(new Runnable() {
+            @Override
+            public void run() {
+                keyboard.applyResponsive(shortSide, portrait);
+            }
+        });
+
+        View wordRow = findViewById(R.id.llWord);
+        setHeightPx(wordRow, wordRowH);
+        if (wordRow != null) {
+            wordRow.setPadding(wordRow.getPaddingLeft(), Math.max(2, gap / 2),
+                    wordRow.getPaddingRight(), wordRow.getPaddingBottom());
+        }
+        setWidthPx(wordsSwitch, switchW);
+        setTextSizePx(wordsSwitch, searchChipTextPx);
+        int chipGap = Math.max(2, gap / 2);
+        mGridViewWord.setSpacingWithMargins(chipGap, chipGap);
+
+        if (llHistoryWord != null) {
+            llHistoryWord.setPadding(llHistoryWord.getPaddingLeft(), gap,
+                    llHistoryWord.getPaddingRight(), llHistoryWord.getPaddingBottom());
+        }
+        setTextSizePx(tvHistoryTitle, searchChipTextPx);
+        setHeightPx(tvHistoryClear, fieldH);
+        setWidthPx(tvHistoryClear, fieldH);
+        setTopMarginPx(historyWordGrid, gap);
+
+        if (wordAdapter != null) {
+            wordAdapter.setMetrics(searchChipMinWidthPx, searchChipPaddingPx, searchChipTextPx);
+            wordAdapter.notifyDataSetChanged();
+        }
+        if (hotWordAdapter != null) {
+            hotWordAdapter.setMetrics(searchChipMinWidthPx, searchChipPaddingPx, searchChipTextPx);
+            hotWordAdapter.notifyDataSetChanged();
+        }
+        historyWordGrid.post(new Runnable() {
+            @Override
+            public void run() {
+                refreshSearchHistoryWords();
+            }
+        });
+        searchRoot.requestLayout();
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        applyResponsiveSearchLayout();
+    }
+
     private void startSearch(String wd) {
         if (TextUtils.isEmpty(wd)) {
             return;
@@ -396,7 +538,8 @@ public class SearchActivity extends BaseActivity {
 
     private void setAggregateHotTitle() {
         wordsSwitch.setText("热  门");
-        wordsSwitch.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.ts_22));
+        setTextSizePx(wordsSwitch, searchTextPx > 0 ? searchTextPx
+                : getResources().getDimensionPixelSize(R.dimen.ts_22));
         wordsSwitch.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             wordsSwitch.setLetterSpacing(0.08f);
@@ -405,7 +548,8 @@ public class SearchActivity extends BaseActivity {
 
     private void setNormalWordTitle() {
         wordsSwitch.setText("热词 | 历史");
-        wordsSwitch.setTextSize(TypedValue.COMPLEX_UNIT_PX, getResources().getDimension(R.dimen.ts_20));
+        setTextSizePx(wordsSwitch, searchTextPx > 0 ? searchTextPx
+                : getResources().getDimensionPixelSize(R.dimen.ts_20));
         wordsSwitch.setTypeface(Typeface.DEFAULT, Typeface.NORMAL);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             wordsSwitch.setLetterSpacing(0f);
@@ -458,13 +602,18 @@ public class SearchActivity extends BaseActivity {
                 if (!aggregateSearchMode) return;
                 ArrayList<String> history = Hawk.get(HawkConfig.SEARCH_HISTORY, new ArrayList<String>());
                 historyWordGrid.removeAllViews();
-                int itemHeight = getResources().getDimensionPixelSize(R.dimen.vs_50);
-                int itemMargin = getResources().getDimensionPixelSize(R.dimen.vs_5);
-                int paddingH = getResources().getDimensionPixelSize(R.dimen.vs_10);
-                int minWidth = getResources().getDimensionPixelSize(R.dimen.vs_80);
+                int itemHeight = searchHistoryItemHeightPx > 0 ? searchHistoryItemHeightPx
+                        : getResources().getDimensionPixelSize(R.dimen.vs_50);
+                int itemMargin = searchHistoryMarginPx > 0 ? searchHistoryMarginPx
+                        : getResources().getDimensionPixelSize(R.dimen.vs_5);
+                int paddingH = searchChipPaddingPx > 0 ? searchChipPaddingPx
+                        : getResources().getDimensionPixelSize(R.dimen.vs_10);
+                int minWidth = searchHistoryMinWidthPx > 0 ? searchHistoryMinWidthPx
+                        : getResources().getDimensionPixelSize(R.dimen.vs_80);
                 int availableWidth = historyWordGrid.getWidth();
                 if (availableWidth <= 0) availableWidth = llHistoryWord.getWidth();
-                float textSize = getResources().getDimension(R.dimen.ts_22);
+                float textSize = searchChipTextPx > 0 ? searchChipTextPx
+                        : getResources().getDimension(R.dimen.ts_22);
                 int textColor = getResources().getColor(R.color.color_FFFFFF);
                 LinearLayout row = null;
                 int rowWidth = 0;

@@ -161,38 +161,55 @@ public class GridFilterDialog extends BaseDialog {
 
     private boolean selectChange = false;
 
-    /** 计算半屏/全屏高度（按可用显示区，减去状态栏） */
+    /** 计算展开/收起两档的筛选行间距(px)：只调整行疏密，不改变面板高度，避免留白 */
     private void measureHeights() {
         DisplayMetrics dm = new DisplayMetrics();
         WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
         if (wm != null) {
             wm.getDefaultDisplay().getMetrics(dm);
-            int usable = dm.heightPixels;
-            halfHeightPx = Math.round(usable * HALF_RATIO);
-            fullHeightPx = Math.round(usable * FULL_RATIO);
+            int shortSide = Math.min(dm.widthPixels, dm.heightPixels);
+            if (shortSide <= 0) shortSide = 720;
+            halfHeightPx = Math.round(shortSide * 0.004f);   // 紧凑：行间距小
+            fullHeightPx = Math.round(shortSide * 0.020f);   // 舒展：行间距大
         }
     }
 
-    private void applyHeight(int targetPx, boolean animate) {
-        if (filterRoot == null || targetPx <= 0) return;
-        ViewGroup.LayoutParams lp = filterRoot.getLayoutParams();
-        if (lp == null) return;
-        if (!animate || heightAnimator != null) {
-            if (heightAnimator != null) heightAnimator.cancel();
-            lp.height = targetPx;
-            filterRoot.setLayoutParams(lp);
+    /** 按当前档位调整筛选行垂直间距，让"上拉展开"体现为行距变疏，而非面板变高留白。
+     *  注意：筛选行由 GridFragment.setFilterDialogData() 直接 addView 到 filterRoot，
+     *  并不在 filterItems 容器里，所以这里遍历 filterRoot 并按 id 跳过手柄/关闭按钮。 */
+    private void applyRowSpacing(int gapPx) {
+        if (filterRoot == null) return;
+        boolean firstRow = true;
+        for (int i = 0; i < filterRoot.getChildCount(); i++) {
+            View row = filterRoot.getChildAt(i);
+            int id = row.getId();
+            if (id == R.id.tvFilterHandle || id == R.id.tvCloseFilter || id == R.id.filterScroll) {
+                continue;
+            }
+            ViewGroup.LayoutParams lp = row.getLayoutParams();
+            if (lp instanceof ViewGroup.MarginLayoutParams) {
+                ((ViewGroup.MarginLayoutParams) lp).topMargin = firstRow ? 0 : gapPx;
+                ((ViewGroup.MarginLayoutParams) lp).bottomMargin = 0;
+                row.setLayoutParams(lp);
+            }
+            firstRow = false;
+        }
+        filterRoot.requestLayout();
+    }
+
+    private void animateRowSpacing(int targetPx, boolean animate) {
+        if (!animate) {
+            applyRowSpacing(targetPx);
             return;
         }
-        final int from = lp.height > 0 ? lp.height : targetPx;
-        heightAnimator = ValueAnimator.ofInt(from, targetPx);
-        heightAnimator.setDuration(240);
+        if (heightAnimator != null) heightAnimator.cancel();
+        final int[] from = {expanded ? halfHeightPx : fullHeightPx};
+        heightAnimator = ValueAnimator.ofInt(from[0], targetPx);
+        heightAnimator.setDuration(200);
         heightAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                ViewGroup.LayoutParams p = filterRoot.getLayoutParams();
-                if (p == null) return;
-                p.height = (Integer) animation.getAnimatedValue();
-                filterRoot.setLayoutParams(p);
+                applyRowSpacing((Integer) animation.getAnimatedValue());
             }
         });
         heightAnimator.start();
@@ -202,7 +219,7 @@ public class GridFilterDialog extends BaseDialog {
         if (!MotionConfig.SECTION_DRAWER) return;
         if (wantExpand == expanded) return;
         expanded = wantExpand;
-        applyHeight(expanded ? fullHeightPx : halfHeightPx, true);
+        animateRowSpacing(expanded ? fullHeightPx : halfHeightPx, true);
     }
 
     private void bindDrawerHandle() {
@@ -247,7 +264,8 @@ public class GridFilterDialog extends BaseDialog {
         layoutParams.gravity = Gravity.BOTTOM;
         layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
         // 遮罩铺满全屏（MATCH_PARENT），这样点击面板外的暗色区域能被 root 捕获并关闭；
-        // 面板本身由 filterRoot 的 layout_gravity="bottom" 贴底，高度按半屏/全屏两档动态设置。
+        // 面板本身由 filterRoot 的 layout_gravity="bottom" 贴底，高度按内容自适应(wrap_content)，
+        // 不再撑到固定百分比，从根本上消除只有几行筛选时的顶部大片留白。
         layoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
         layoutParams.dimAmount = 0.62f;
         getWindow().getDecorView().setPadding(0, 0, 0, 0);
@@ -255,7 +273,15 @@ public class GridFilterDialog extends BaseDialog {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         measureHeights();
         expanded = false;
-        applyHeight(halfHeightPx, false);
+        // 面板高度交给内容；用最大高度约束，内容过多时可滚动而非撑满整屏
+        if (filterRoot != null) {
+            ViewGroup.LayoutParams lp = filterRoot.getLayoutParams();
+            if (lp != null) {
+                lp.height = ViewGroup.LayoutParams.WRAP_CONTENT;
+                filterRoot.setLayoutParams(lp);
+            }
+        }
+        applyRowSpacing(halfHeightPx);
     }
 
     @Override

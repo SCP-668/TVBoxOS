@@ -2,6 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/searchRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:clipChildren="false"
@@ -12,8 +13,9 @@
 
     <!-- 顶部：搜索源 + 输入框 + 搜索/清空 -->
     <LinearLayout
+        android:id="@+id/searchTop"
         android:layout_width="match_parent"
-    android:background="@color/pw_bg"
+        android:background="@color/pw_bg"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/vs_10"
         android:orientation="vertical">
@@ -46,6 +48,7 @@
             android:textSize="@dimen/ts_20" />
 
         <LinearLayout
+            android:id="@+id/searchActions"
             android:layout_width="match_parent"
             android:layout_height="@dimen/vs_50"
             android:layout_marginTop="@dimen/vs_10"
@@ -85,7 +88,7 @@
     <com.github.tvbox.osc.ui.tv.widget.SearchKeyboard
         android:id="@+id/keyBoardRoot"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/vs_300"
+        android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/vs_10" />
 
     <!-- 远程扫码区（竖屏默认隐藏，需要时可显示） -->
