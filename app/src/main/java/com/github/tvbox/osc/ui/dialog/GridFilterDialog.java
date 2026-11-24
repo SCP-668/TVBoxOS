@@ -4,6 +4,7 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.util.DisplayMetrics;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -58,10 +59,39 @@ public class GridFilterDialog extends BaseDialog {
             });
             PressRebound.bind(closeBtn);
         }
+        // Dialog Context 未经 AutoSize density 适配，XML 里的 mm 字号被压小；用 px 覆盖
+        applyDialogTextSize();
 
         // 分段式抽屉：手柄点击 / 上下滑动在半屏与全屏之间切换
         bindDrawerHandle();
         bindOutsideTouchDismiss();
+    }
+
+    /**
+     * 按屏幕短边计算筛选弹窗字号(px)。Dialog 不走 BaseActivity 的 AutoSize 适配，
+     * mm 单位在此被压小，改用 px 直接设置，横竖屏都清晰。
+     */
+    public static int filterTextPx(Context context) {
+        DisplayMetrics dm = new DisplayMetrics();
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        if (wm != null) {
+            wm.getDefaultDisplay().getMetrics(dm);
+        }
+        int shortSide = Math.min(dm.widthPixels, dm.heightPixels);
+        if (shortSide <= 0) shortSide = 720;
+        return Math.max(18, Math.round(shortSide * 0.030f));
+    }
+
+    private void applyDialogTextSize() {
+        int labelPx = filterTextPx(getContext());
+        TextView handle = findViewById(R.id.tvFilterHandle);
+        if (handle != null) {
+            handle.setTextSize(TypedValue.COMPLEX_UNIT_PX, Math.max(16, labelPx - 2));
+        }
+        TextView close = findViewById(R.id.tvCloseFilter);
+        if (close != null) {
+            close.setTextSize(TypedValue.COMPLEX_UNIT_PX, labelPx);
+        }
     }
 
     public interface Callback {
@@ -83,13 +113,16 @@ public class GridFilterDialog extends BaseDialog {
         ArrayList<MovieSort.SortFilter> filters = sortData.filters;
         ViewGroup items = findViewById(R.id.filterItems);
         if (items == null) items = filterRoot;
+        int textPx = filterTextPx(getContext());
         for (MovieSort.SortFilter filter : filters) {
             View line = LayoutInflater.from(getContext()).inflate(R.layout.item_grid_filter, null);
-            ((TextView) line.findViewById(R.id.filterName)).setText(filter.name);
+            TextView nameTv = line.findViewById(R.id.filterName);
+            nameTv.setText(filter.name);
+            nameTv.setTextSize(TypedValue.COMPLEX_UNIT_PX, textPx);
             TvRecyclerView gridView = line.findViewById(R.id.mFilterKv);
             gridView.setHasFixedSize(true);
             gridView.setLayoutManager(new V7LinearLayoutManager(getContext(), 0, false));
-            GridFilterKVAdapter filterKVAdapter = new GridFilterKVAdapter();
+            GridFilterKVAdapter filterKVAdapter = new GridFilterKVAdapter(textPx);
             gridView.setAdapter(filterKVAdapter);
             String key = filter.key;
             ArrayList<String> values = new ArrayList<>(filter.values.keySet());

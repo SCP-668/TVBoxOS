@@ -549,15 +549,18 @@ public class GridFragment extends BaseLazyFragment {
         assert context != null;
         final int defaultColor = ContextCompat.getColor(context, R.color.color_FFFFFF);
         final int selectedColor = ContextCompat.getColor(context, R.color.color_02F8E1);
+        // Dialog Context 未经 AutoSize 适配，mm 字号被压小；统一按屏幕短边算 px
+        final int textPx = com.github.tvbox.osc.ui.dialog.GridFilterDialog.filterTextPx(context);
         // 遍历过滤条件数据
         for (MovieSort.SortFilter filter : sortData.filters) {
             View line = inflater.inflate(R.layout.item_grid_filter, gridFilterDialog.filterRoot, false);
             TextView filterNameTv = line.findViewById(R.id.filterName);
             filterNameTv.setText(filter.name);
+            filterNameTv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, textPx);
             TvRecyclerView gridView = line.findViewById(R.id.mFilterKv);
             gridView.setHasFixedSize(true);
             gridView.setLayoutManager(new V7LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
-            GridFilterKVAdapter adapter = new GridFilterKVAdapter();
+            GridFilterKVAdapter adapter = new GridFilterKVAdapter(textPx);
             gridView.setAdapter(adapter);
             final String key = filter.key;
             final ArrayList<String> values = new ArrayList<>(filter.values.keySet());

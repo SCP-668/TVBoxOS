@@ -139,10 +139,17 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
             final int baseRight = content.getPaddingRight();
             final int baseTop = content.getPaddingTop();
             final int baseBottom = content.getPaddingBottom();
+            // 主动读取系统状态栏物理高度(px)作为兜底：
+            // 部分页面(如搜索页)首次 WindowInsets 回调时 top 为 0(全屏主题过渡/软键盘时机)，
+            // 只依赖回调会导致状态栏显示后内容仍贴顶。用 max(兜底,insets) 保证任何页面都有安全区。
+            final int statusBarFallback = getStatusBarHeightPx();
+            // 立即设置一次，不等待 insets 回调
+            content.setPadding(baseLeft, baseTop + statusBarFallback,
+                    baseRight, baseBottom);
             ViewCompat.setOnApplyWindowInsetsListener(content, (v, insets) -> {
                 // 用兼容旧版 core 的 API（appcompat 1.3.0 传递的 core 可能 < 1.5，
                 // 不支持 WindowInsetsCompat.Type.systemBars()）
-                int barTop = insets.getSystemWindowInsetTop();
+                int barTop = Math.max(insets.getSystemWindowInsetTop(), statusBarFallback);
                 int barBottom = insets.getSystemWindowInsetBottom();
                 int barLeft = insets.getSystemWindowInsetLeft();
                 int barRight = insets.getSystemWindowInsetRight();
@@ -153,6 +160,16 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
             });
             ViewCompat.requestApplyInsets(content);
             content.setTag(R.id.pw_statusbar_applied, Boolean.TRUE);
+        }
+    }
+
+    /** 读取系统状态栏高度(物理 px)，不经过 AutoSize density，避免被倍率放大 */
+    private int getStatusBarHeightPx() {
+        try {
+            int id = super.getResources().getIdentifier("status_bar_height", "dimen", "android");
+            return id > 0 ? super.getResources().getDimensionPixelSize(id) : 0;
+        } catch (Throwable th) {
+            return 0;
         }
     }
 
