@@ -34,10 +34,15 @@ public class BaseDialog extends Dialog {
         if (isContextInvalid()) {
             return;
         }
-        getWindow().setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+        Window window = getWindow();
+        if (window == null) {
+            super.show();
+            return;
+        }
+        window.setFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
         super.show();
-        hideSysBar();
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
+        applyStatusBarMode(window);
+        window.clearFlags(WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE);
     }
 
     private boolean isContextInvalid() {
@@ -50,16 +55,43 @@ public class BaseDialog extends Dialog {
                 || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1 && activity.isDestroyed());
     }
 
-    private void hideSysBar() {
+    /**
+     * 弹窗不能一律隐藏状态栏：普通页面上打开筛选/选集等弹窗时，信号栏应继续保持可见。
+     * 只有宿主本来就是全屏播放页时，弹窗才沿用全屏沉浸，避免播放器被状态栏打断。
+     */
+    private void applyStatusBarMode(Window window) {
+        boolean hostFullscreen = false;
+        Context context = getContext();
+        if (context instanceof Activity) {
+            Window hostWindow = ((Activity) context).getWindow();
+            if (hostWindow != null) {
+                hostFullscreen = (hostWindow.getDecorView().getSystemUiVisibility()
+                        & View.SYSTEM_UI_FLAG_FULLSCREEN) != 0;
+            }
+        }
+        WindowManager.LayoutParams lp = window.getAttributes();
+        if (hostFullscreen) {
+            lp.flags |= WindowManager.LayoutParams.FLAG_FULLSCREEN;
+        } else {
+            lp.flags &= ~WindowManager.LayoutParams.FLAG_FULLSCREEN;
+        }
+        window.setAttributes(lp);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-            int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
-            uiOptions |= View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
-            uiOptions |= View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
-            uiOptions |= View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
-            uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
-            uiOptions |= View.SYSTEM_UI_FLAG_FULLSCREEN;
-            uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
-            getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+            int uiOptions = window.getDecorView().getSystemUiVisibility();
+            if (hostFullscreen) {
+                uiOptions |= View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
+                uiOptions |= View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION;
+                uiOptions |= View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+                uiOptions |= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+                uiOptions |= View.SYSTEM_UI_FLAG_FULLSCREEN;
+                uiOptions |= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+            } else {
+                uiOptions &= ~View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN;
+                uiOptions &= ~View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+                uiOptions &= ~View.SYSTEM_UI_FLAG_FULLSCREEN;
+                uiOptions &= ~View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+            }
+            window.getDecorView().setSystemUiVisibility(uiOptions);
         }
     }
 }

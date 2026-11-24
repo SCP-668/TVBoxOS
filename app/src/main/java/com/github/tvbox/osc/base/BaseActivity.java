@@ -96,7 +96,7 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
      * 统一窗口模式入口。所有 onResume / onWindowFocusChanged / 系统栏监听回调都走这里，
      * 避免"显示状态栏"被 hideSysBar 重新盖上。
      */
-    protected void applyWindowMode() {
+    public void applyWindowMode() {
         if (needFullscreen()) {
             hideSysBar();
         } else {
@@ -134,23 +134,25 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
             window.setStatusBarColor(super.getResources().getColor(R.color.pw_bg));
         }
         // 状态栏安全区：把状态栏物理高度作为 content 的顶部 padding，内容从状态栏下方开始。
-        // 只设置一次（用 tag 标记），避免 onResume/onFocus 反复调用时重复叠加。
+        // tag 记录"已加了多少"，而不是只标记加过：onResume/onFocus 反复调用时按差值调整，
+        // 详情页在普通态/全屏播放态之间切换时也能可逆地加/减，避免重复叠加或残留空白。
         View content = decor.findViewById(android.R.id.content);
-        if (content != null && content.getTag(R.id.pw_statusbar_applied) == null) {
+        if (content != null) {
             final int barHeight = getStatusBarHeightPx();
-            // 基准 padding 只读取一次：onResume/onFocus 会反复走本方法，靠 tag 保证只设一次，
-            // 绝不从"已加过 padding 的 content"再读，避免逐次累加导致顶部越撑越高。
-            final int baseLeft = content.getPaddingLeft();
-            final int baseRight = content.getPaddingRight();
-            final int baseTop = content.getPaddingTop();
-            final int baseBottom = content.getPaddingBottom();
-            // 顶部安全区只用状态栏物理高度(px)，一次性加足。
-            // 不再用 insets.getSystemWindowInsetTop()：部分真机该值经过 AutoSize density
-            // 放大，取 max 后会撑出双倍空白（用户反馈的信号栏过高）；固定物理高度最可控。
-            // 左右/底部系统栏(insets)不涉及此问题，仍交给系统默认处理，这里只动 top。
-            content.setPadding(baseLeft, baseTop + barHeight, baseRight, baseBottom);
-            content.setTag(R.id.pw_statusbar_applied, Boolean.TRUE);
+            final int applied = getAppliedStatusBarPadding(content);
+            if (applied != barHeight) {
+                final int top = Math.max(0, content.getPaddingTop() - applied + barHeight);
+                content.setPadding(content.getPaddingLeft(), top,
+                        content.getPaddingRight(), content.getPaddingBottom());
+                content.setTag(R.id.pw_statusbar_applied, barHeight);
+            }
         }
+    }
+
+    /** 读取 content 上已加的状态栏安全区高度(px)；0 表示当前未加 */
+    private static int getAppliedStatusBarPadding(View content) {
+        Object tag = content.getTag(R.id.pw_statusbar_applied);
+        return tag instanceof Integer ? (Integer) tag : 0;
     }
 
     /** 读取系统状态栏高度(物理 px)，不经过 AutoSize density，避免被倍率放大 */
@@ -191,8 +193,20 @@ public abstract class BaseActivity extends AppCompatActivity implements CustomAd
     }
 
     public void hideSysBar() {
-        // 播放页需要真全屏：恢复 Window 的 FLAG_FULLSCREEN（普通页会清掉）
+        // 从普通态切到真正全屏播放：撤掉之前加的顶部安全区，避免播放器上方残留一条空白。
         Window window = getWindow();
+        View content = window != null ? window.getDecorView().findViewById(android.R.id.content) : null;
+        if (content != null) {
+            int applied = getAppliedStatusBarPadding(content);
+            if (applied > 0) {
+                content.setPadding(content.getPaddingLeft(),
+                        Math.max(0, content.getPaddingTop() - applied),
+                        content.getPaddingRight(), content.getPaddingBottom());
+                content.setTag(R.id.pw_statusbar_applied, 0);
+            }
+        }
+        // 播放页需要真全屏：恢复 Window 的 FLAG_FULLSCREEN（普通页会清掉）
+        window = getWindow();
         if (window != null) {
             WindowManager.LayoutParams wlp = window.getAttributes();
             wlp.flags |= WindowManager.LayoutParams.FLAG_FULLSCREEN;

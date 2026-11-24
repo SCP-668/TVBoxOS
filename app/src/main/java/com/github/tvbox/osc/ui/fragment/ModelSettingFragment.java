@@ -349,7 +349,9 @@ public class ModelSettingFragment extends BaseLazyFragment {
                 dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
                     @Override
                     public void onDismiss(DialogInterface dialog) {
-                        ((BaseActivity) mActivity).hideSysBar();
+                        // 弹窗关闭后恢复宿主页面原有的窗口模式：普通设置页显示状态栏，
+                        // 只有播放页才继续沉浸。不要无条件 hideSysBar，否则设置页信号栏会被隐藏。
+                        ((BaseActivity) mActivity).applyWindowMode();
                         EventBus.getDefault().unregister(dialog);
                         apiDialog = null;
                     }

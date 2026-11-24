@@ -168,10 +168,10 @@ public class DetailActivity extends BaseActivity {
         return R.layout.activity_detail;
     }
 
-    // 播放页：保持全屏沉浸，不显示状态栏（播放器需要完整画面）
+    // 普通详情页显示状态栏并预留安全区；只有进入全屏播放(fullWindows)时才沉浸隐藏。
     @Override
     protected boolean needFullscreen() {
-        return true;
+        return fullWindows;
     }
 
     @Override
@@ -2062,6 +2062,8 @@ public class DetailActivity extends BaseActivity {
             setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         }
         fullWindows = full;
+        // 同一 Activity 内普通态/全屏态切换：同步窗口模式，普通态补回状态栏安全区，全屏态撤掉。
+        applyWindowMode();
         if (playFragment != null) {
             playFragment.setAutoSwitchLineEnabled(!fullWindows);
             playFragment.setPreviewMode(!fullWindows);
