@@ -14,6 +14,21 @@
         android:orientation="vertical"
         android:padding="@dimen/vs_20">
 
+        <!-- 分段式抽屉手柄：点击在半屏/全屏间切换，上拉展开、下拉回半屏 -->
+        <TextView
+            android:id="@+id/tvFilterHandle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/vs_10"
+            android:background="@drawable/pw_card"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:padding="@dimen/vs_8"
+            android:text="—  上拉展开 / 下拉收起  —"
+            android:textColor="@color/pw_ink2"
+            android:textSize="@dimen/ts_18" />
+
         <!-- 明确的关闭出口：TV 遥控器/鼠标点击均可关闭筛选面板 -->
         <TextView
             android:id="@+id/tvCloseFilter"
@@ -21,11 +36,30 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/vs_10"
             android:background="@drawable/pw_card"
+            android:clickable="true"
+            android:focusable="true"
             android:gravity="center"
             android:padding="@dimen/vs_10"
             android:text="✕ 关闭筛选"
             android:textColor="@color/pw_blue"
             android:textSize="@dimen/ts_22" />
+
+        <!-- 筛选行容器：内容多时可滚动，避免小屏/竖屏被裁切 -->
+        <ScrollView
+            android:id="@+id/filterScroll"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/vs_0"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/filterItems"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+        </ScrollView>
 
     </LinearLayout>
 

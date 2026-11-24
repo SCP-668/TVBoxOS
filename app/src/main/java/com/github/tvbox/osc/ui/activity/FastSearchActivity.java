@@ -12,7 +12,6 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.view.View;
-import android.view.animation.BounceInterpolator;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -23,6 +22,7 @@ import com.github.catvod.crawler.JsLoader;
 import com.github.tvbox.osc.R;
 import com.github.tvbox.osc.api.ApiConfig;
 import com.github.tvbox.osc.base.BaseActivity;
+import com.github.tvbox.osc.ui.widget.motion.PressRebound;
 import com.github.tvbox.osc.bean.AbsXml;
 import com.github.tvbox.osc.bean.Movie;
 import com.github.tvbox.osc.bean.SourceBean;
@@ -71,7 +71,6 @@ public class FastSearchActivity extends BaseActivity {
     private static final int SEARCH_PUMP_SECONDS = 2;
     private static final int SEARCH_NEXT_BATCH_SECONDS = 3;
     private static final int SEARCH_SITE_TIMEOUT_SECONDS = 15;
-    private static final long POSTER_FOCUS_ANIM_DURATION = 300L;
     private static final float POSTER_FOCUS_SCALE = 1.05f;
     private static final String SEARCH_ALL_NAME = "\u5168\u90e8";
     private LinearLayout llLayout;
@@ -298,13 +297,7 @@ public class FastSearchActivity extends BaseActivity {
         if (focused) {
             itemView.bringToFront();
         }
-        float scale = focused ? POSTER_FOCUS_SCALE : 1.0f;
-        itemView.animate()
-                .scaleX(scale)
-                .scaleY(scale)
-                .setDuration(POSTER_FOCUS_ANIM_DURATION)
-                .setInterpolator(new BounceInterpolator())
-                .start();
+        PressRebound.focus(itemView, focused, POSTER_FOCUS_SCALE);
     }
 
     private void initViewModel() {
