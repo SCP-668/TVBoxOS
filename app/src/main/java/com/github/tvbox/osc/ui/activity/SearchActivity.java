@@ -113,6 +113,7 @@ public class SearchActivity extends BaseActivity {
     private TextView tvSearch;
     private TextView tvClear;
     private ImageView tvHistoryClear;
+    private TextView tvHistoryTitle;
     private SearchKeyboard keyboard;
     private SearchAdapter searchAdapter;
     private PinyinAdapter wordAdapter;
@@ -198,6 +199,7 @@ public class SearchActivity extends BaseActivity {
         mGridViewWord = findViewById(R.id.mGridViewWord);
         historyWordGrid = findViewById(R.id.historyWordGrid);
         tvHistoryClear = findViewById(R.id.tvHistoryClear);
+        tvHistoryTitle = findViewById(R.id.tvHistoryTitle);
         mGridViewWord.setHasFixedSize(true);
         wordAdapter = new PinyinAdapter();
         hotWordAdapter = new PinyinAdapter();
